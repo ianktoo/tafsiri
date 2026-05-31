@@ -1,5 +1,9 @@
 # tafsiri
 
+[![CI](https://github.com/ianktoo/tafsiri/actions/workflows/ci.yml/badge.svg)](https://github.com/ianktoo/tafsiri/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+
 Turn raw text into **fine-tuning-ready translation datasets** for African
 languages, with quality scores you can trust.
 
