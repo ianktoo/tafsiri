@@ -69,3 +69,23 @@ def test_llm_judge_handles_invoke_exception(source, ok_translation):
     sig = LLMJudgeEvaluator(Boom()).evaluate(source, ok_translation)
     assert sig.score is None
     assert "provider down" in sig.detail["error"]
+
+
+def test_llm_judge_uses_custom_prompt_overrides(source, ok_translation):
+    seen = {}
+
+    def capture(messages):
+        seen["system"] = messages[0][1]
+        seen["user"] = messages[1][1]
+        return '{"adequacy": 4, "fluency": 4}'
+
+    model = FakeChatModel(capture)
+    judge = LLMJudgeEvaluator(
+        model,
+        system_prompt="CUSTOM RUBRIC",
+        user_builder=lambda s, sl, tl, t: f"{sl}|{tl}|{s}|{t}",
+    )
+    sig = judge.evaluate(source, ok_translation)
+    assert sig.score == 0.75
+    assert seen["system"] == "CUSTOM RUBRIC"
+    assert seen["user"] == "English|Swahili|hello world|habari dunia"

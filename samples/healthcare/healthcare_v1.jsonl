@@ -1,0 +1,10 @@
+{"id": "book-appointment", "text": "I would like to book an appointment to see the doctor about a persistent cough next week.", "src_lang": "English", "domain": "healthcare", "category": "appointment"}
+{"id": "prescription-dosage", "text": "Take one tablet twice a day after meals. Finish the full course even if you start feeling better.", "src_lang": "English", "domain": "healthcare", "category": "medication"}
+{"id": "vaccination-reminder", "text": "It is time for your child's next vaccination. Please visit the clinic before the end of the month.", "src_lang": "English", "domain": "healthcare", "category": "preventive"}
+{"id": "antenatal-visit", "text": "Pregnant mothers should attend at least four antenatal checkups to keep both mother and baby healthy.", "src_lang": "English", "domain": "healthcare", "category": "maternal"}
+{"id": "diabetes-diet", "text": "Reduce sugary drinks and eat more vegetables. Check your blood sugar at the times the nurse showed you.", "src_lang": "English", "domain": "healthcare", "category": "chronic_care"}
+{"id": "bp-monitoring", "text": "Take your blood pressure medicine every morning and rest if you feel dizzy or have a headache.", "src_lang": "English", "domain": "healthcare", "category": "chronic_care"}
+{"id": "results-ready", "text": "Your test results are ready. Please come to the clinic so the doctor can explain them to you.", "src_lang": "English", "domain": "healthcare", "category": "results"}
+{"id": "mental-health", "text": "If you are feeling overwhelmed or sad for a long time, it is okay to ask for help. You are not alone.", "src_lang": "English", "domain": "healthcare", "category": "mental_health"}
+{"id": "handwashing", "text": "Wash your hands with soap and clean water before eating and after using the toilet to prevent disease.", "src_lang": "English", "domain": "healthcare", "category": "hygiene"}
+{"id": "follow-up", "text": "Come back for a follow-up visit in two weeks so we can check how well the treatment is working.", "src_lang": "English", "domain": "healthcare", "category": "follow_up"}

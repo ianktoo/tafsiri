@@ -1,0 +1,10 @@
+{"id": "send-money", "text": "Enter the recipient's number, type the amount you want to send, and confirm with your PIN.", "src_lang": "English", "domain": "finance", "category": "mobile_money"}
+{"id": "balance-check", "text": "Your current account balance is shown below. Dial the short code anytime to check it for free.", "src_lang": "English", "domain": "finance", "category": "account"}
+{"id": "loan-application", "text": "You are eligible for a small loan. Repay within thirty days to qualify for a higher limit next time.", "src_lang": "English", "domain": "finance", "category": "credit"}
+{"id": "fraud-alert", "text": "Never share your PIN or one-time code with anyone. The bank will never ask you for it by phone or text.", "src_lang": "English", "domain": "finance", "category": "security"}
+{"id": "bill-payment", "text": "You can pay your electricity bill directly from your phone. Select the biller and enter your account number.", "src_lang": "English", "domain": "finance", "category": "payments"}
+{"id": "savings-advice", "text": "Try to save a small amount each week. Even a little, saved regularly, grows into a useful sum over time.", "src_lang": "English", "domain": "finance", "category": "literacy"}
+{"id": "interest-explained", "text": "Interest is the extra money you pay back on top of the amount you borrowed. A lower rate costs you less.", "src_lang": "English", "domain": "finance", "category": "literacy"}
+{"id": "transaction-failed", "text": "Your transaction could not be completed due to insufficient funds. Please top up and try again.", "src_lang": "English", "domain": "finance", "category": "mobile_money"}
+{"id": "insurance-cover", "text": "This health cover pays for hospital visits and medicines. Keep your membership number safe.", "src_lang": "English", "domain": "finance", "category": "insurance"}
+{"id": "withdraw-cash", "text": "To withdraw cash, visit any agent, show your code, and collect your money after the agent confirms it.", "src_lang": "English", "domain": "finance", "category": "mobile_money"}

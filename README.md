@@ -39,8 +39,10 @@ Each stage is one module with one job, so you can swap any piece:
 ```powershell
 uv sync                      # core
 uv sync --extra dev          # + pytest
-uv sync --extra judge        # + LangChain (LLM-as-judge)
-uv sync --extra ollama       # + local Ollama judge support
+uv sync --extra ollama       # + local Ollama judge
+uv sync --extra openai       # + OpenAI judge
+uv sync --extra anthropic    # + Claude judge
+uv sync --extra gemini       # + Gemini judge
 ```
 
 Prefer pip? Core runtime deps are pinned in `requirements.txt`:
@@ -92,16 +94,21 @@ confidence. A score is bucketed into a **rating**:
 
 ### LLM-as-judge (provider-agnostic via LangChain)
 
-The judge is any LangChain chat model. Pick the provider with `--judge`:
+The judge is any LangChain chat model. Pick it with `--judge provider:model`.
+Friendly aliases: `claude`→Anthropic, `gemini`→Google, `gpt`→OpenAI.
 
 ```powershell
 # local, free, private — needs a running Ollama server
 uv run tafsiri run --judge ollama:llama3.1
 
-# hosted providers (set the provider's API key in your env)
+# hosted providers (set the provider's own API key in your env)
 uv run tafsiri run --judge openai:gpt-4o-mini
-uv run tafsiri run --judge anthropic:claude-sonnet-4-6
+uv run tafsiri run --judge claude:claude-sonnet-4-6
+uv run tafsiri run --judge gemini:gemini-2.0-flash
 ```
+
+Install the matching extra first (`uv sync --extra openai|anthropic|gemini|ollama`).
+The judge prompt lives in `tafsiri.prompts` and is overridable — see below.
 
 ## Outputs
 
@@ -182,10 +189,31 @@ Recognized: `id`, `src_lang`/`lang`. Everything else is preserved as metadata.
 uv run tafsiri run --source mydata.csv --langs Swahili,Amharic
 ```
 
-The bundled emergency dataset (`data/source/emergency_v1.jsonl`) pairs
-**affected-party** and **first-responder** messages across medical, disaster,
-public-health, and security scenarios — the report breaks scores down by
-speaker and language.
+### Bundled sample datasets
+
+Ready-to-run datasets live in [`samples/`](samples/), one folder per domain —
+**emergency, healthcare, finance, tech, road-accidents, conversations** (64
+records total). See [`samples/README.md`](samples/README.md) for the catalog and
+a step-by-step full-pipeline walkthrough.
+
+```powershell
+uv run tafsiri run --source samples/finance/finance_v1.jsonl --langs Swahili --progress
+```
+
+## Customizing prompts
+
+All prompt text lives in the importable `tafsiri.prompts` package — nothing is
+buried inline. Override per evaluator:
+
+```python
+from tafsiri.evaluators import LLMJudgeEvaluator, make_chat_model
+
+judge = LLMJudgeEvaluator(
+    make_chat_model("claude:claude-sonnet-4-6"),
+    system_prompt="Your custom rubric...",
+    user_builder=lambda src, sl, tl, tr: f"{sl}->{tl}: {src} == {tr}",
+)
+```
 
 ## CLI reference
 
@@ -226,7 +254,7 @@ Exit codes: `0` success (or clean abandon), `2` config error (e.g. missing key),
 ## Development
 
 ```powershell
-uv run pytest          # full suite (52 tests), network-free — providers/judge are faked
+uv run pytest          # full suite (58 tests), network-free — providers/judge are faked
 ```
 
 ## Project layout
@@ -236,7 +264,8 @@ src/tafsiri/
   config.py        sources.py      scoring.py      storage.py
   schema.py        providers/      evaluators/     export.py
   serialize.py     pipeline.py     cli.py          progress.py
-data/source/       emergency_v1.jsonl   (bundled example dataset)
+  prompts/         importable, overridable prompt text
+samples/           datasets by domain + full-pipeline guide
 tests/             network-free unit tests
 ```
 
@@ -249,7 +278,8 @@ tests/             network-free unit tests
 
 - **[Daraja AI](https://daraja.ai)** — the translation provider (Babel models).
   Requires a `DARAJA_API_KEY`.
-- **LangChain** (optional, `[judge]`) — powers the LLM-as-judge evaluator.
+- **LangChain** (optional) — powers the LLM-as-judge. Pick a provider extra:
+  `[openai]`, `[anthropic]` (Claude), `[gemini]`, or `[ollama]` (local).
 - **requests**, **python-dotenv** — core.
 
 ## License

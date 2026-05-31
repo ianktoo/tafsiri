@@ -251,8 +251,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
 
     r = sub.add_parser("run", help="translate, evaluate, score, persist, export")
-    r.add_argument("--source", default="data/source/emergency_v1.jsonl",
-                   help="JSONL/CSV source file (default: bundled emergency dataset)")
+    r.add_argument("--source", default="samples/emergency/emergency_v1.jsonl",
+                   help="JSONL/CSV source file (default: bundled emergency sample)")
     r.add_argument("--langs", default=None,
                    help="comma-separated target languages (default: Swahili,Yoruba,Amharic,Creole)")
     r.add_argument("--out-dir", default="out", help="output directory (default: out)")

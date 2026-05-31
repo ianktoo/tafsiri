@@ -1,0 +1,10 @@
+{"id": "login-failed", "text": "I can't log in to my account. It says my password is incorrect even though I just reset it.", "src_lang": "English", "domain": "tech", "category": "support"}
+{"id": "reset-password", "text": "Click 'Forgot password', enter your email, and follow the link we send to choose a new password.", "src_lang": "English", "domain": "tech", "category": "support"}
+{"id": "app-crash", "text": "The app keeps crashing every time I open the camera. I have already updated to the latest version.", "src_lang": "English", "domain": "tech", "category": "bug_report"}
+{"id": "enable-2fa", "text": "To protect your account, turn on two-factor authentication in Settings and add your phone number.", "src_lang": "English", "domain": "tech", "category": "security"}
+{"id": "storage-full", "text": "Your device storage is almost full. Delete unused apps or move your photos to the cloud to free up space.", "src_lang": "English", "domain": "tech", "category": "notification"}
+{"id": "no-internet", "text": "There is no internet connection. Check that Wi-Fi is on, then restart your router and try again.", "src_lang": "English", "domain": "tech", "category": "troubleshooting"}
+{"id": "update-available", "text": "A new software update is available. Connect to Wi-Fi and tap Install to get the latest features and fixes.", "src_lang": "English", "domain": "tech", "category": "notification"}
+{"id": "data-backup", "text": "Back up your data regularly so you don't lose your contacts and messages if your phone is damaged.", "src_lang": "English", "domain": "tech", "category": "guidance"}
+{"id": "subscription-renew", "text": "Your subscription will renew automatically next week. You can cancel anytime from the billing page.", "src_lang": "English", "domain": "tech", "category": "billing"}
+{"id": "feature-feedback", "text": "Thank you for your feedback. We have shared your suggestion with our product team for review.", "src_lang": "English", "domain": "tech", "category": "support"}

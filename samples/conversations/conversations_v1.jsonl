@@ -1,0 +1,10 @@
+{"id": "greeting", "text": "Good morning! How are you today? It has been a while since we last talked.", "src_lang": "English", "domain": "conversations", "category": "greeting"}
+{"id": "introduce-self", "text": "My name is Amina. I just moved to this neighborhood and I work as a teacher at the local school.", "src_lang": "English", "domain": "conversations", "category": "introduction"}
+{"id": "ask-directions", "text": "Excuse me, how do I get to the bus station from here? Is it within walking distance?", "src_lang": "English", "domain": "conversations", "category": "directions"}
+{"id": "market-bargain", "text": "How much for these tomatoes? That is a bit expensive. Can you lower the price if I buy two baskets?", "src_lang": "English", "domain": "conversations", "category": "market"}
+{"id": "order-food", "text": "I would like a plate of rice with beans and some vegetables, please. And a glass of water.", "src_lang": "English", "domain": "conversations", "category": "food"}
+{"id": "weather-chat", "text": "The rains are late this year. The farmers are worried, but the sky looks promising this afternoon.", "src_lang": "English", "domain": "conversations", "category": "small_talk"}
+{"id": "make-plans", "text": "Are you free on Saturday? We could meet for tea in the afternoon and catch up properly.", "src_lang": "English", "domain": "conversations", "category": "social"}
+{"id": "ask-time", "text": "Do you know what time it is? I think I am late for my meeting and my phone has run out of battery.", "src_lang": "English", "domain": "conversations", "category": "small_talk"}
+{"id": "thank-you", "text": "Thank you so much for your help today. I really appreciate it. Please greet your family for me.", "src_lang": "English", "domain": "conversations", "category": "courtesy"}
+{"id": "goodbye", "text": "It was lovely seeing you. Take care of yourself, and let's not wait so long to meet again.", "src_lang": "English", "domain": "conversations", "category": "farewell"}
