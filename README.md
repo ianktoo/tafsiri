@@ -144,7 +144,8 @@ Add an LLM-as-judge?  [Y/n] y  → ollama:qwen2.5:7b-instruct
 
 That translates each message into Swahili, Yoruba, Amharic, and Creole,
 evaluates with confidence + back-translation, scores each, persists to
-`tafsiri.db`, and writes outputs to `out/`.
+the SQLite db, and writes outputs under `~/.tafsiri/` (override with
+`--out-dir` / `--db`).
 
 Smaller / faster trial:
 
@@ -217,7 +218,8 @@ The judge prompt lives in `tafsiri.prompts` and is overridable - see below.
 
 ## Outputs
 
-For run `run-YYYYMMDD-HHMMSS`, written to `out/`:
+For run `run-YYYYMMDD-HHMMSS`, written under `~/.tafsiri/out/` by default
+(override with `--out-dir`, or set `TAFSIRI_HOME`):
 
 | File                  | What                                                    |
 | --------------------- | ------------------------------------------------------- |
@@ -361,6 +363,8 @@ The CLI is colorized via [`rich`](https://github.com/Textualize/rich). Colors
 auto-disable when output isn't a terminal; set `NO_COLOR=1` to force plain.
 Interactive prompts only appear on a real terminal, so CI/pipes never block.
 
+Full command + flag reference: [`docs/cli.md`](docs/cli.md).
+
 Flags for `tafsiri run`:
 
 | Flag                  | Default                       | Purpose                                                        |
@@ -368,8 +372,8 @@ Flags for `tafsiri run`:
 | `--source`            | bundled emergency dataset     | JSONL/CSV file of source text                                  |
 | `--engine`            | `daraja`                      | translation engine: `daraja` or `llm:<provider>:<model>`       |
 | `--langs`             | Swahili,Yoruba,Amharic,Creole | comma-separated target languages                               |
-| `--out-dir`           | `out`                         | where training data / CSV / report are written                 |
-| `--db`                | `tafsiri.db`                  | SQLite database path                                           |
+| `--out-dir`           | `~/.tafsiri/out`              | where training data / CSV / report are written                 |
+| `--db`                | `~/.tafsiri/tafsiri.db`       | SQLite database path (`TAFSIRI_HOME` sets the base dir)         |
 | `--run-id`            | timestamp                     | run identifier (reuse with `--resume`)                         |
 | `--limit`             | 0 (all)                       | only the first N source rows                                   |
 | `--judge`             | off                           | LLM-as-judge model, e.g. `ollama:llama3.1`, `openai:gpt-4o-mini` |
@@ -392,7 +396,7 @@ Exit codes: `0` success (or clean abandon), `2` config error (e.g. missing key),
 ## Development
 
 ```powershell
-uv run pytest                 # full suite (84 tests), network-free - providers/judge are faked
+uv run pytest                 # full suite (93 tests), network-free - providers/judge are faked
 uv run pre-commit install     # local secret-scanning + hygiene hooks (one time)
 ```
 

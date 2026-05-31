@@ -1,10 +1,12 @@
 """tafsiri command-line interface.
 
-  tafsiri run    — translate a source file, evaluate, score, persist, export
-  tafsiri runs   — list past runs stored in the SQLite db
-  tafsiri report — print the stored eval report for a run
+  tafsiri          - interactive guided wizard (setup, then configure + run)
+  tafsiri init     - interactive setup: enter + test key, detect Ollama
+  tafsiri run      - translate a source file, evaluate, score, persist, export
+  tafsiri runs     - list past runs stored in the SQLite db
+  tafsiri report   - print or export the stored eval report for a run
 
-Run `tafsiri <command> -h` for options.
+Run `tafsiri <command> -h` for options. Full reference: docs/cli.md
 """
 
 from __future__ import annotations
@@ -15,7 +17,12 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from tafsiri.config import DEFAULT_TARGET_LANGUAGES, Settings
+from tafsiri.config import (
+    DEFAULT_TARGET_LANGUAGES,
+    Settings,
+    default_db_path,
+    default_out_dir,
+)
 from tafsiri.evaluators import (
     BackTranslationEvaluator,
     ConfidenceEvaluator,
@@ -230,8 +237,10 @@ def build_parser() -> argparse.ArgumentParser:
                         "'llm:<provider>:<model>' e.g. llm:claude:claude-sonnet-4-6")
     r.add_argument("--langs", default=None,
                    help="comma-separated target languages (default: Swahili,Yoruba,Amharic,Creole)")
-    r.add_argument("--out-dir", default="out", help="output directory (default: out)")
-    r.add_argument("--db", default="tafsiri.db", help="SQLite db path (default: tafsiri.db)")
+    r.add_argument("--out-dir", default=default_out_dir(),
+                   help="output directory (default: ~/.tafsiri/out)")
+    r.add_argument("--db", default=default_db_path(),
+                   help="SQLite db path (default: ~/.tafsiri/tafsiri.db)")
     r.add_argument("--run-id", default=None, help="run id (default: timestamp)")
     r.add_argument("--judge", default=None,
                    help="LLM-as-judge model spec, e.g. ollama:llama3.1 or openai:gpt-4o-mini")
@@ -265,12 +274,12 @@ def build_parser() -> argparse.ArgumentParser:
     r.set_defaults(func=cmd_run)
 
     rl = sub.add_parser("runs", help="list stored runs")
-    rl.add_argument("--db", default="tafsiri.db")
+    rl.add_argument("--db", default=default_db_path())
     rl.set_defaults(func=cmd_runs)
 
     rp = sub.add_parser("report", help="print or export the stored report for a run")
     rp.add_argument("run_id")
-    rp.add_argument("--db", default="tafsiri.db")
+    rp.add_argument("--db", default=default_db_path())
     rp.add_argument("--format", choices=["text", "json", "md"], default="text",
                     help="output format (default: text to console)")
     rp.add_argument("--out", default=None,
