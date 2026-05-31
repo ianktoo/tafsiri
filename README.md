@@ -181,10 +181,45 @@ The bundled emergency dataset (`data/source/emergency_v1.jsonl`) pairs
 public-health, and security scenarios — the report breaks scores down by
 speaker and language.
 
+## CLI reference
+
+Three commands:
+
+| Command                      | What it does                                        |
+| ---------------------------- | --------------------------------------------------- |
+| `tafsiri run`                | translate → evaluate → score → persist → export     |
+| `tafsiri runs`               | list runs stored in the SQLite db                   |
+| `tafsiri report <run-id>`    | print the stored report for a run                   |
+
+Flags for `tafsiri run`:
+
+| Flag                  | Default                       | Purpose                                                        |
+| --------------------- | ----------------------------- | -------------------------------------------------------------- |
+| `--source`            | bundled emergency dataset     | JSONL/CSV file of source text                                  |
+| `--langs`             | Swahili,Yoruba,Amharic,Creole | comma-separated target languages                               |
+| `--out-dir`           | `out`                         | where training data / CSV / report are written                 |
+| `--db`                | `tafsiri.db`                  | SQLite database path                                           |
+| `--run-id`            | timestamp                     | run identifier (reuse with `--resume`)                         |
+| `--limit`             | 0 (all)                       | only the first N source rows                                   |
+| `--judge`             | off                           | LLM-as-judge model, e.g. `ollama:llama3.1`, `openai:gpt-4o-mini` |
+| `--no-backtranslation`| off                           | skip the back-translation evaluator (halves API calls)         |
+| `--min-rating`        | `marginal`                    | minimum rating kept in training data (`marginal` or `good`)    |
+| `--good`              | 0.85                          | score threshold for the `good` rating                          |
+| `--marginal`          | 0.70                          | score threshold for the `marginal` rating                      |
+| `--delay`             | 0.2                           | seconds between API calls (raise to ease rate limits)          |
+| `--resume`            | off                           | reuse already-stored `ok` translations for this run-id         |
+| `--fail-threshold`    | 5                             | consecutive failures before a cooldown (0 disables breaker)    |
+| `--cooldown`          | 5.0                           | base cooldown seconds (doubles each time)                      |
+| `--max-cooldowns`     | 3                             | cooldowns to attempt before stopping cleanly                   |
+| `--abandon-calls`     | off                           | on a failure streak, stop calling and evaluate what succeeded  |
+
+Exit codes: `0` success (or clean abandon), `2` config error (e.g. missing key),
+`3` stopped early by the circuit-breaker.
+
 ## Development
 
 ```powershell
-uv run pytest          # full suite, network-free (providers/judge are faked)
+uv run pytest          # full suite (47 tests), network-free — providers/judge are faked
 ```
 
 ## Project layout
@@ -201,7 +236,9 @@ tests/             network-free unit tests
 ## Roadmap
 
 - A `ghost.build` sink (persist evals/results to ghost.build alongside SQLite).
-- Back-translation enabled by default once provider rate limits allow.
+- A `--progress` flag: live progress bar + rotating status line for batch runs
+  (falls back to plain output when not a TTY).
+- More bundled datasets beyond the emergency example.
 
 ## Dependencies
 
