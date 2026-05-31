@@ -31,6 +31,7 @@ from tafsiri.export import (
     write_pairs_jsonl,
     write_report,
 )
+from tafsiri import ui
 from tafsiri.pipeline import RateLimitAbort, run_pipeline
 from tafsiri.progress import Progress
 from tafsiri.providers import build_translator
@@ -38,45 +39,6 @@ from tafsiri.scoring import Scorer
 from tafsiri.serialize import flatten_record, record_from_row
 from tafsiri.sources import load_source
 from tafsiri.storage import SQLiteStore
-
-
-def _truncate(s, width: int) -> str:
-    s = "" if s is None else str(s)
-    return s if len(s) <= width else s[: width - 1] + "…"
-
-
-def _print_table(records) -> None:
-    cols = [("source_id", 18), ("tgt_lang", 9), ("score", 6),
-            ("rating", 9), ("translation", 40)]
-    print("\n" + "  ".join(f"{n:<{w}}" for n, w in cols))
-    print("  ".join("-" * w for _, w in cols))
-    for rec in records:
-        r = flatten_record(rec)
-        score = "" if r["aggregate_score"] is None else f"{r['aggregate_score']:.3f}"
-        cells = [
-            _truncate(r["source_id"], 18), _truncate(r["tgt_lang"], 9),
-            f"{score:<6}", _truncate(r["rating"], 9),
-            _truncate(r["translation"] if r["ok"] else f"ERR: {r['error']}", 40),
-        ]
-        print("  ".join(f"{c:<{w}}" for c, (_, w) in zip(cells, cols)))
-
-
-def _print_report(report: dict) -> None:
-    print("\n" + "=" * 64)
-    print("EVAL REPORT")
-    print("=" * 64)
-    print(f"  scored/ok/total : {report.get('ok')}/{report.get('total')}")
-    print(f"  avg score       : {report.get('avg_score')}")
-    print(f"  lowest score    : {report.get('lowest_score')}")
-    c = report.get("rating_counts", {})
-    print(f"  good/marginal/risky : {c.get('good',0)}/{c.get('marginal',0)}/{c.get('risky',0)}")
-    for sig, st in report.get("by_signal", {}).items():
-        print(f"  signal {sig:<16}: avg {st['avg_score']} (n={st['count']})")
-    for lang, st in report.get("by_language", {}).items():
-        print(f"  {lang:<10}: avg {st['avg_score']} (n={st['count']})")
-    for sp, st in report.get("by_speaker", {}).items():
-        print(f"  {sp:<16}: avg {st['avg_score']} (n={st['count']})")
-    print(f"\n  VERDICT: {report.get('verdict')}")
 
 
 def cmd_run(args: argparse.Namespace) -> int:
@@ -159,7 +121,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         progress.finish()
 
     records = cached + new_records
-    _print_table(records)
+    flat_rows = [flatten_record(r) for r in records]
+    ui.render_results(flat_rows)
 
     out_dir = Path(args.out_dir)
     chat_path = out_dir / f"{run_id}.chat.jsonl"
@@ -178,25 +141,18 @@ def cmd_run(args: argparse.Namespace) -> int:
     store.finish_run(run_id, report)
     store.close()
 
-    _print_report(report)
-    print(f"\n  training (chat) : {chat_path}  ({n_chat} kept, min_rating={args.min_rating})")
-    print(f"  training (pairs): {pairs_path}  ({n_pairs} kept)")
-    print(f"  csv             : {csv_path}")
-    print(f"  report (json)   : {report_path}")
-    print(f"  report (md)     : {md_path}")
-    print(f"  db              : {args.db}  (run_id={run_id})")
+    ui.render_report(report, run_id)
+    ui.info(f"training (chat) : {chat_path}  ({n_chat} kept, min_rating={args.min_rating})")
+    ui.info(f"training (pairs): {pairs_path}  ({n_pairs} kept)")
+    ui.info(f"csv             : {csv_path}")
+    ui.info(f"report (json)   : {report_path}")
+    ui.info(f"report (md)     : {md_path}")
+    ui.info(f"db              : {args.db}  (run_id={run_id})")
 
     if aborted:
-        print("\n" + "!" * 64)
-        print("STOPPED EARLY — provider kept failing (likely rate limiting)")
-        print("!" * 64)
-        print(f"  {aborted}")
-        print("  Partial results are saved. To continue where this left off:")
-        print(f"    tafsiri run --run-id {run_id} --resume --delay {max(delay, 2.0):.0f}")
-        print("  Other options:")
-        print("    • retry later, once the rate-limit window resets")
-        print("    • raise --delay / lower call volume (e.g. --no-backtranslation)")
-        print("    • use a different API key or client")
+        resume_cmd = (f"tafsiri run --run-id {run_id} --resume "
+                      f"--delay {max(delay, 2.0):.0f}")
+        ui.render_stopped(aborted, resume_cmd)
         return 3
     return 0
 
@@ -232,7 +188,7 @@ def cmd_report(args: argparse.Namespace) -> int:
     else:  # text
         if args.out:
             print("--out is only used with --format json|md", file=sys.stderr)
-        _print_report(report)
+        ui.render_report(report, args.run_id)
         return 0
 
     if args.out:
@@ -243,10 +199,19 @@ def cmd_report(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_init(args: argparse.Namespace) -> int:
+    from tafsiri import interactive
+    return interactive.run_setup()
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="tafsiri", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    sub = p.add_subparsers(dest="command", required=True)
+    # Subcommand is optional: bare `tafsiri` launches the interactive wizard.
+    sub = p.add_subparsers(dest="command", required=False)
+
+    sub.add_parser("init", help="interactive setup (key, test, judge)").set_defaults(
+        func=cmd_init)
 
     r = sub.add_parser("run", help="translate, evaluate, score, persist, export")
     r.add_argument("--source", default="samples/emergency/emergency_v1.jsonl",
@@ -317,6 +282,10 @@ def _force_utf8_stdout() -> None:
 def main(argv: list[str] | None = None) -> int:
     _force_utf8_stdout()
     args = build_parser().parse_args(argv)
+    if getattr(args, "func", None) is None:
+        # bare `tafsiri` — launch the guided wizard (or help if non-interactive)
+        from tafsiri import interactive
+        return interactive.run_wizard()
     return args.func(args)
 
 

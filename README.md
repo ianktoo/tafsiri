@@ -61,7 +61,13 @@ Each stage is one module with one job, so you can swap any piece:
 | `pipeline`             | Orchestrate source → translate → evaluate → score    |
 | `storage`              | Durable SQLite persistence (a pluggable `Sink`)      |
 | `export`               | Write training data (2 formats), CSV, eval report    |
+| `ui`                   | Presentation: colors, tables, panels, prompts (view) |
+| `interactive`          | Setup wizard + guided run (controller)               |
 | `cli`                  | Wire it together                                     |
+
+The **core never imports the view**. `ui`/`interactive` sit on top and consume
+the plain data the core emits — so you can add another front-end (web, TUI)
+without touching the pipeline.
 
 ## Install
 
@@ -88,7 +94,16 @@ cp .env.example .env        # then edit in your real key
 
 ## Quickstart
 
-Run the bundled emergency dataset through the full pipeline:
+New here? Just run it — a guided wizard handles setup (key, engine, dataset,
+languages) and runs the pipeline:
+
+```powershell
+uv run tafsiri            # interactive wizard
+uv run tafsiri init       # just the setup step (key entry + test)
+```
+
+Or drive everything with flags (scriptable, reproducible — the wizard is only a
+convenience on top):
 
 ```powershell
 uv run tafsiri run
@@ -281,13 +296,19 @@ judge = LLMJudgeEvaluator(
 
 ## CLI reference
 
-Three commands:
+Commands:
 
 | Command                      | What it does                                        |
 | ---------------------------- | --------------------------------------------------- |
+| `tafsiri` (no args)          | interactive guided wizard (setup → configure → run) |
+| `tafsiri init`               | interactive setup: enter + test key, detect Ollama  |
 | `tafsiri run`                | translate → evaluate → score → persist → export     |
 | `tafsiri runs`               | list runs stored in the SQLite db                   |
 | `tafsiri report <run-id>`    | print/export a stored report (`--format text\|json\|md --out FILE`) |
+
+The CLI is colorized via [`rich`](https://github.com/Textualize/rich). Colors
+auto-disable when output isn't a terminal; set `NO_COLOR=1` to force plain.
+Interactive prompts only appear on a real terminal, so CI/pipes never block.
 
 Flags for `tafsiri run`:
 
@@ -319,7 +340,7 @@ Exit codes: `0` success (or clean abandon), `2` config error (e.g. missing key),
 ## Development
 
 ```powershell
-uv run pytest          # full suite (70 tests), network-free — providers/judge are faked
+uv run pytest          # full suite (77 tests), network-free — providers/judge are faked
 ```
 
 ## Project layout
@@ -329,6 +350,7 @@ src/tafsiri/
   config.py        sources.py      scoring.py      storage.py
   schema.py        providers/      evaluators/     export.py
   serialize.py     pipeline.py     cli.py          progress.py
+  ui.py            interactive.py  (presentation layer — consumes the core)
   prompts/         importable, overridable prompt text
 samples/           datasets by domain + full-pipeline guide
 docs/              guides — see docs/evals.md
@@ -346,6 +368,7 @@ tests/             network-free unit tests
   Requires a `DARAJA_API_KEY`.
 - **LangChain** (optional) — powers the LLM-as-judge. Pick a provider extra:
   `[openai]`, `[anthropic]` (Claude), `[gemini]`, or `[ollama]` (local).
+- **rich** — colors, tables, panels, and prompts for the CLI.
 - **requests**, **python-dotenv** — core.
 
 ## License

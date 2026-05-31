@@ -9,6 +9,7 @@ keywords = ["translation", "african-languages", "fine-tuning", "evaluation", "da
 dependencies = [
     "python-dotenv>=1.0",
     "requests>=2.31",
+    "rich>=13",
 ]
 
 [project.optional-dependencies]
