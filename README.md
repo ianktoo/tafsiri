@@ -413,7 +413,9 @@ tests/             network-free unit tests
 
 ## Roadmap
 
-- A `ghost.build` sink (persist evals/results to ghost.build alongside SQLite).
+- A `ghost.build` sink (parked): persist evals to ghost.build alongside SQLite.
+  It's managed Postgres, so this is a `psycopg`-backed `Sink` using a connection
+  string from `ghost connect` — a clean drop-in behind a `[ghost]` extra.
 - More bundled datasets beyond the emergency example.
 
 ## Dependencies
