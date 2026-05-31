@@ -9,5 +9,11 @@ Pass a custom ``system_prompt`` / ``user_builder`` to an evaluator to override.
 """
 
 from tafsiri.prompts.judge import JUDGE_SYSTEM, build_judge_user
+from tafsiri.prompts.translate import TRANSLATE_SYSTEM, build_translate_user
 
-__all__ = ["JUDGE_SYSTEM", "build_judge_user"]
+__all__ = [
+    "JUDGE_SYSTEM",
+    "build_judge_user",
+    "TRANSLATE_SYSTEM",
+    "build_translate_user",
+]

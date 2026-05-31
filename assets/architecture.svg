@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 760" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#495057"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="760" fill="#fbfcff"/>
+
+  <!-- title -->
+  <text x="500" y="40" text-anchor="middle" font-size="26" font-weight="700" fill="#1a1a2e">tafsiri</text>
+  <text x="500" y="64" text-anchor="middle" font-size="13" fill="#555">swappable translation engines &#183; multi-signal evaluation &#183; fine-tuning data</text>
+
+  <!-- Layer A: source data -->
+  <rect x="290" y="92" width="420" height="46" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.5"/>
+  <text x="500" y="120" text-anchor="middle" font-size="14" font-weight="600" fill="#1e3a8a">Source data &#8212; samples/*.jsonl &#183; CSV (any domain)</text>
+
+  <line x1="500" y1="140" x2="500" y2="167" stroke="#495057" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Layer B: loader -->
+  <rect x="330" y="170" width="340" height="44" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.5"/>
+  <text x="500" y="197" text-anchor="middle" font-size="14" font-weight="600" fill="#1e3a8a">sources &#8594; SourceRecord</text>
+
+  <line x1="500" y1="216" x2="500" y2="246" stroke="#495057" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Layer C: pipeline container -->
+  <rect x="50" y="250" width="900" height="250" rx="14" fill="#f8f9ff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="72" y="276" font-size="13" font-weight="700" fill="#475569">pipeline orchestrator</text>
+
+  <!-- C1: engine -->
+  <rect x="78" y="292" width="250" height="190" rx="10" fill="#fff4e6" stroke="#e8590c" stroke-width="1.5"/>
+  <text x="203" y="316" text-anchor="middle" font-size="14" font-weight="700" fill="#d9480f">Translation engine</text>
+  <text x="203" y="334" text-anchor="middle" font-size="11" fill="#9a3412">(swappable)</text>
+  <rect x="96" y="348" width="214" height="52" rx="8" fill="#ffffff" stroke="#f08c00" stroke-width="1.2"/>
+  <text x="203" y="370" text-anchor="middle" font-size="12.5" font-weight="600" fill="#b45309">Daraja / Babel</text>
+  <text x="203" y="388" text-anchor="middle" font-size="11" fill="#92400e">purpose-built &#183; API</text>
+  <rect x="96" y="410" width="214" height="56" rx="8" fill="#ffffff" stroke="#f08c00" stroke-width="1.2"/>
+  <text x="203" y="432" text-anchor="middle" font-size="12.5" font-weight="600" fill="#b45309">LLM engine</text>
+  <text x="203" y="450" text-anchor="middle" font-size="10.5" fill="#92400e">Claude &#183; OpenAI &#183; Gemini &#183; Ollama</text>
+
+  <line x1="330" y1="387" x2="373" y2="387" stroke="#495057" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- C2: evaluators -->
+  <rect x="375" y="292" width="250" height="190" rx="10" fill="#e6fcf5" stroke="#0ca678" stroke-width="1.5"/>
+  <text x="500" y="316" text-anchor="middle" font-size="14" font-weight="700" fill="#087f5b">Evaluators</text>
+  <text x="500" y="334" text-anchor="middle" font-size="11" fill="#0b7285">each &#8594; signal 0..1</text>
+  <rect x="393" y="346" width="214" height="38" rx="8" fill="#ffffff" stroke="#12b886" stroke-width="1.2"/>
+  <text x="500" y="370" text-anchor="middle" font-size="12.5" fill="#0b7285">Confidence</text>
+  <rect x="393" y="390" width="214" height="38" rx="8" fill="#ffffff" stroke="#12b886" stroke-width="1.2"/>
+  <text x="500" y="414" text-anchor="middle" font-size="12.5" fill="#0b7285">Back-translation</text>
+  <rect x="393" y="434" width="214" height="38" rx="8" fill="#ffffff" stroke="#12b886" stroke-width="1.2"/>
+  <text x="500" y="458" text-anchor="middle" font-size="12.5" fill="#0b7285">LLM-as-judge</text>
+
+  <line x1="627" y1="387" x2="670" y2="387" stroke="#495057" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- C3: scorer -->
+  <rect x="672" y="292" width="250" height="190" rx="10" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.5"/>
+  <text x="797" y="316" text-anchor="middle" font-size="14" font-weight="700" fill="#5f3dc4">Scorer</text>
+  <text x="797" y="334" text-anchor="middle" font-size="11" fill="#6741d9">weighted aggregate &#8594; rating</text>
+  <rect x="690" y="346" width="214" height="38" rx="8" fill="#ebfbee" stroke="#2f9e44" stroke-width="1.2"/>
+  <text x="797" y="370" text-anchor="middle" font-size="12.5" font-weight="600" fill="#2b8a3e">good &#8805; 0.85</text>
+  <rect x="690" y="390" width="214" height="38" rx="8" fill="#fff9db" stroke="#f08c00" stroke-width="1.2"/>
+  <text x="797" y="414" text-anchor="middle" font-size="12.5" font-weight="600" fill="#e67700">marginal &#8805; 0.70</text>
+  <rect x="690" y="434" width="214" height="38" rx="8" fill="#fff5f5" stroke="#e03131" stroke-width="1.2"/>
+  <text x="797" y="458" text-anchor="middle" font-size="12.5" font-weight="600" fill="#c92a2a">risky &lt; 0.70</text>
+
+  <line x1="500" y1="500" x2="500" y2="531" stroke="#495057" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Layer D: outputs -->
+  <text x="72" y="528" font-size="12" font-weight="700" fill="#868e96">outputs</text>
+  <rect x="50" y="534" width="205" height="60" rx="10" fill="#fff0f6" stroke="#c2255c" stroke-width="1.5"/>
+  <text x="152" y="560" text-anchor="middle" font-size="12.5" font-weight="600" fill="#a61e4d">SQLite store</text>
+  <text x="152" y="579" text-anchor="middle" font-size="10.5" fill="#a61e4d">persist &#183; --resume</text>
+  <rect x="281" y="534" width="205" height="60" rx="10" fill="#fff0f6" stroke="#c2255c" stroke-width="1.5"/>
+  <text x="383" y="560" text-anchor="middle" font-size="12.5" font-weight="600" fill="#a61e4d">Training data</text>
+  <text x="383" y="579" text-anchor="middle" font-size="10.5" fill="#a61e4d">chat.jsonl &#183; pairs.jsonl</text>
+  <rect x="512" y="534" width="205" height="60" rx="10" fill="#fff0f6" stroke="#c2255c" stroke-width="1.5"/>
+  <text x="614" y="560" text-anchor="middle" font-size="12.5" font-weight="600" fill="#a61e4d">CSV</text>
+  <text x="614" y="579" text-anchor="middle" font-size="10.5" fill="#a61e4d">every translation + score</text>
+  <rect x="743" y="534" width="205" height="60" rx="10" fill="#fff0f6" stroke="#c2255c" stroke-width="1.5"/>
+  <text x="845" y="560" text-anchor="middle" font-size="12.5" font-weight="600" fill="#a61e4d">report.json</text>
+  <text x="845" y="579" text-anchor="middle" font-size="10.5" fill="#a61e4d">scores + verdict</text>
+
+  <!-- caption -->
+  <text x="500" y="652" text-anchor="middle" font-size="12" fill="#868e96">Every stage is a swappable module &#183; prompts live in tafsiri.prompts &#183; rate-limit backoff, resume &amp; abandon built in</text>
+  <text x="500" y="676" text-anchor="middle" font-size="11" fill="#adb5bd">research use: hold the eval harness fixed, swap the engine, and compare translation quality across models &amp; languages</text>
+</svg>

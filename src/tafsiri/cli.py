@@ -31,7 +31,7 @@ from tafsiri.export import (
 )
 from tafsiri.pipeline import RateLimitAbort, run_pipeline
 from tafsiri.progress import Progress
-from tafsiri.providers import DarajaTranslator
+from tafsiri.providers import build_translator
 from tafsiri.scoring import Scorer
 from tafsiri.serialize import flatten_record, record_from_row
 from tafsiri.sources import load_source
@@ -77,9 +77,6 @@ def _print_report(report: dict) -> None:
 
 def cmd_run(args: argparse.Namespace) -> int:
     settings = Settings.from_env()
-    if not settings.api_key:
-        print("No API key. Set DARAJA_API_KEY in .env", file=sys.stderr)
-        return 2
 
     sources = load_source(args.source)
     if args.limit:
@@ -87,8 +84,13 @@ def cmd_run(args: argparse.Namespace) -> int:
     langs = ([s.strip() for s in args.langs.split(",")] if args.langs
              else list(DEFAULT_TARGET_LANGUAGES))
 
-    translator = DarajaTranslator(settings.api_key, base_url=settings.base_url,
-                                  timeout=settings.request_timeout)
+    try:
+        translator = build_translator(
+            args.engine, daraja_key=settings.api_key,
+            base_url=settings.base_url, timeout=settings.request_timeout)
+    except (ValueError, ImportError) as e:
+        print(f"Could not init engine {args.engine!r}: {e}", file=sys.stderr)
+        return 2
 
     evaluators = [ConfidenceEvaluator()]
     if not args.no_backtranslation:
@@ -105,7 +107,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     run_id = args.run_id or datetime.now().strftime("run-%Y%m%d-%H%M%S")
     store = SQLiteStore(args.db)
     meta = {"source": str(args.source), "languages": langs,
-            "judge": args.judge, "back_translation": not args.no_backtranslation}
+            "engine": args.engine, "judge": args.judge,
+            "back_translation": not args.no_backtranslation}
     store.start_run(run_id, meta, created_at=datetime.now().isoformat(timespec="seconds"))
 
     # Resume: reuse already-successful (source, lang) pairs from the db.
@@ -253,6 +256,9 @@ def build_parser() -> argparse.ArgumentParser:
     r = sub.add_parser("run", help="translate, evaluate, score, persist, export")
     r.add_argument("--source", default="samples/emergency/emergency_v1.jsonl",
                    help="JSONL/CSV source file (default: bundled emergency sample)")
+    r.add_argument("--engine", default="daraja",
+                   help="translation engine: 'daraja' (default) or "
+                        "'llm:<provider>:<model>' e.g. llm:claude:claude-sonnet-4-6")
     r.add_argument("--langs", default=None,
                    help="comma-separated target languages (default: Swahili,Yoruba,Amharic,Creole)")
     r.add_argument("--out-dir", default="out", help="output directory (default: out)")

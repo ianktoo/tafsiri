@@ -6,18 +6,47 @@ languages, with quality scores you can trust.
 `tafsiri` ("translation" in Swahili) runs a simple pipeline:
 
 ```
-source text  →  translate (Daraja AI / Babel)  →  evaluate  →  score
+source text  →  translate (Babel / LLM engine)  →  evaluate  →  score
              →  structured training data  +  an eval report
 ```
 
-It translates your text into one or more African languages using
-[Daraja AI](https://daraja.ai)'s *Babel* models, evaluates each translation
-several independent ways, scores it, and writes out fine-tuning data plus a
-report telling you whether the quality is good enough to use. Everything is
-persisted to SQLite so nothing is lost between sessions.
+It translates your text into one or more African languages, evaluates each
+translation several independent ways, scores it, and writes out fine-tuning data
+plus a report telling you whether the quality is good enough to use. Everything
+is persisted to SQLite so nothing is lost between sessions.
+
+![tafsiri architecture](assets/architecture.svg)
 
 > **Name note:** "Daraja" is also Safaricom's M-PESA API. This project targets
 > the Daraja AI **translation** API (`api.daraja.ai`), not M-PESA.
+
+## Background
+
+African languages are spoken by well over a billion people, yet most remain
+**low-resource** for machine translation: training corpora are scarce, and
+general-purpose models — built largely on English and other high-resource
+languages — tend to translate them inconsistently. Purpose-built efforts like
+[Daraja AI](https://daraja.ai)'s *Babel* models aim to close that gap.
+
+For many real applications (emergency response, healthcare, finance) a
+translation isn't useful unless you can tell whether it's **trustworthy** — a
+fluent-sounding but subtly wrong translation can be worse than none. Yet quality
+measurement for low-resource African languages is itself underdeveloped.
+
+`tafsiri` is a small **research harness** for exactly this. It holds a
+reproducible evaluation pipeline fixed and lets you vary the inputs:
+
+- **Swap the translation engine** (a purpose-built API like Babel, or a general
+  LLM) and compare quality on identical inputs.
+- **Combine evaluation signals** — the engine's own confidence, back-translation
+  round-trips, and an LLM-as-judge — into a single score and rating.
+- **Run across domains and languages** using the bundled [`samples/`](samples/)
+  datasets, and get per-language / per-speaker score breakdowns.
+- **Produce two artifacts**: a fine-tuning-ready dataset (filtered by quality)
+  and a structured eval report.
+
+The aim is to make it easy to ask — and answer with data — *"how good is this
+model, for this language, for this kind of text?"*
 
 ## Why it's built this way (separation of concerns)
 
@@ -51,10 +80,10 @@ Prefer pip? Core runtime deps are pinned in `requirements.txt`:
 pip install -r requirements.txt   # then: pip install -e . to get the `tafsiri` command
 ```
 
-Add your Daraja AI key to `.env` (gitignored):
+Add your Daraja AI key to `.env` (gitignored) — copy the template:
 
-```
-DARAJA_API_KEY=dk_...
+```bash
+cp .env.example .env        # then edit: DARAJA_API_KEY=dk_...
 ```
 
 ## Quickstart
@@ -74,6 +103,30 @@ Smaller / faster trial:
 ```powershell
 uv run tafsiri run --langs Swahili --limit 3 --no-backtranslation
 ```
+
+## Translation engines (swappable)
+
+The translation backend is pluggable via `--engine`. Hold the eval harness
+fixed and swap engines to compare them on identical inputs — the core research
+use case.
+
+```powershell
+# purpose-built engine (default) — Daraja AI's Babel models
+uv run tafsiri run --engine daraja
+
+# general LLM as the translator (research baseline) — any provider:model
+uv run tafsiri run --engine llm:claude:claude-sonnet-4-6
+uv run tafsiri run --engine llm:openai:gpt-4o-mini
+uv run tafsiri run --engine llm:ollama:qwen2.5:7b-instruct   # local, free
+```
+
+| Engine | What | Notes |
+| ------ | ---- | ----- |
+| `daraja` | Daraja AI / Babel, purpose-built for African languages | returns a confidence score |
+| `llm:<provider>:<model>` | any chat model as a translator | no native confidence — lean on back-translation + judge |
+
+Add an engine of your own by implementing the `Translator` protocol (see
+`providers/daraja.py`) and extending `providers/factory.py`.
 
 ## The three evaluators
 
@@ -230,6 +283,7 @@ Flags for `tafsiri run`:
 | Flag                  | Default                       | Purpose                                                        |
 | --------------------- | ----------------------------- | -------------------------------------------------------------- |
 | `--source`            | bundled emergency dataset     | JSONL/CSV file of source text                                  |
+| `--engine`            | `daraja`                      | translation engine: `daraja` or `llm:<provider>:<model>`       |
 | `--langs`             | Swahili,Yoruba,Amharic,Creole | comma-separated target languages                               |
 | `--out-dir`           | `out`                         | where training data / CSV / report are written                 |
 | `--db`                | `tafsiri.db`                  | SQLite database path                                           |
@@ -254,7 +308,7 @@ Exit codes: `0` success (or clean abandon), `2` config error (e.g. missing key),
 ## Development
 
 ```powershell
-uv run pytest          # full suite (58 tests), network-free — providers/judge are faked
+uv run pytest          # full suite (66 tests), network-free — providers/judge are faked
 ```
 
 ## Project layout
