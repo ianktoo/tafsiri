@@ -38,7 +38,7 @@ uv run tafsiri run --source samples/healthcare/healthcare_v1.jsonl `
   --langs Swahili,Yoruba,Amharic,Creole --progress
 ```
 
-**4. (Optional) Add an LLM-as-judge** — choose any provider:
+**4. (Optional) Add an LLM-as-judge** - choose any provider:
 
 ```powershell
 uv sync --extra ollama        # local, free
@@ -48,11 +48,11 @@ uv sync --extra anthropic     # or openai / gemini
 uv run tafsiri run --source samples/tech/tech_v1.jsonl --judge claude:claude-sonnet-4-6
 ```
 
-**5. Find your outputs** — in `out/`:
+**5. Find your outputs** - in `out/`:
 
-- `<run-id>.chat.jsonl` and `<run-id>.pairs.jsonl` — fine-tuning data
-- `<run-id>.csv` — every translation + score
-- `<run-id>.report.json` — the score summary / verdict
+- `<run-id>.chat.jsonl` and `<run-id>.pairs.jsonl` - fine-tuning data
+- `<run-id>.csv` - every translation + score
+- `<run-id>.report.json` - the score summary / verdict
 
 **6. Review and resume**
 
@@ -63,7 +63,7 @@ uv run tafsiri run --run-id <run-id> --resume   # finish a rate-limited run
 ```
 
 If you hit rate limits, see the **Rate limits & resuming** section in the main
-[README](../README.md) — `--delay`, the circuit-breaker, and `--abandon-calls`.
+[README](../README.md) - `--delay`, the circuit-breaker, and `--abandon-calls`.
 
 ## Bring your own
 

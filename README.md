@@ -28,12 +28,12 @@ is persisted to SQLite so nothing is lost between sessions.
 
 African languages are spoken by well over a billion people, yet most remain
 **low-resource** for machine translation: training corpora are scarce, and
-general-purpose models — built largely on English and other high-resource
-languages — tend to translate them inconsistently. Purpose-built efforts like
+general-purpose models - built largely on English and other high-resource
+languages - tend to translate them inconsistently. Purpose-built efforts like
 [Daraja AI](https://daraja.ai)'s *Babel* models aim to close that gap.
 
 For many real applications (emergency response, healthcare, finance) a
-translation isn't useful unless you can tell whether it's **trustworthy** — a
+translation isn't useful unless you can tell whether it's **trustworthy** - a
 fluent-sounding but subtly wrong translation can be worse than none. Yet quality
 measurement for low-resource African languages is itself underdeveloped.
 
@@ -42,14 +42,14 @@ reproducible evaluation pipeline fixed and lets you vary the inputs:
 
 - **Swap the translation engine** (a purpose-built API like Babel, or a general
   LLM) and compare quality on identical inputs.
-- **Combine evaluation signals** — the engine's own confidence, back-translation
-  round-trips, and an LLM-as-judge — into a single score and rating.
+- **Combine evaluation signals** - the engine's own confidence, back-translation
+  round-trips, and an LLM-as-judge - into a single score and rating.
 - **Run across domains and languages** using the bundled [`samples/`](samples/)
   datasets, and get per-language / per-speaker score breakdowns.
 - **Produce two artifacts**: a fine-tuning-ready dataset (filtered by quality)
   and a structured eval report.
 
-The aim is to make it easy to ask — and answer with data — *"how good is this
+The aim is to make it easy to ask - and answer with data - *"how good is this
 model, for this language, for this kind of text?"*
 
 ## Why it's built this way (separation of concerns)
@@ -70,7 +70,7 @@ Each stage is one module with one job, so you can swap any piece:
 | `cli`                  | Wire it together                                     |
 
 The **core never imports the view**. `ui`/`interactive` sit on top and consume
-the plain data the core emits — so you can add another front-end (web, TUI)
+the plain data the core emits - so you can add another front-end (web, TUI)
 without touching the pipeline.
 
 ## Install
@@ -90,7 +90,7 @@ Prefer pip? Core runtime deps are pinned in `requirements.txt`:
 pip install -r requirements.txt   # then: pip install -e . to get the `tafsiri` command
 ```
 
-Add your Daraja AI key to `.env` (gitignored) — copy the template:
+Add your Daraja AI key to `.env` (gitignored) - copy the template:
 
 ```bash
 cp .env.example .env        # then edit in your real key
@@ -98,7 +98,7 @@ cp .env.example .env        # then edit in your real key
 
 ## Quickstart
 
-New here? Just run it — a guided wizard handles setup (key, engine, dataset,
+New here? Just run it - a guided wizard handles setup (key, engine, dataset,
 languages) and runs the pipeline:
 
 ```powershell
@@ -106,7 +106,7 @@ uv run tafsiri            # interactive wizard
 uv run tafsiri init       # just the setup step (key entry + test)
 ```
 
-Or drive everything with flags (scriptable, reproducible — the wizard is only a
+Or drive everything with flags (scriptable, reproducible - the wizard is only a
 convenience on top):
 
 ```powershell
@@ -139,7 +139,7 @@ Add an LLM-as-judge?  [Y/n] y  → ollama:qwen2.5:7b-instruct
 │ good 1   marginal 5   risky 2        │
 └──────────────────────────────────────┘
  by signal: confidence 0.87 · back_translation 0.67 · llm_judge 0.73
- VERDICT: CONDITIONAL FIT — human-in-the-loop review for flagged items
+ VERDICT: CONDITIONAL FIT - human-in-the-loop review for flagged items
 ```
 
 That translates each message into Swahili, Yoruba, Amharic, and Creole,
@@ -155,14 +155,14 @@ uv run tafsiri run --langs Swahili --limit 3 --no-backtranslation
 ## Translation engines (swappable)
 
 The translation backend is pluggable via `--engine`. Hold the eval harness
-fixed and swap engines to compare them on identical inputs — the core research
+fixed and swap engines to compare them on identical inputs - the core research
 use case.
 
 ```powershell
-# purpose-built engine (default) — Daraja AI's Babel models
+# purpose-built engine (default) - Daraja AI's Babel models
 uv run tafsiri run --engine daraja
 
-# general LLM as the translator (research baseline) — any provider:model
+# general LLM as the translator (research baseline) - any provider:model
 uv run tafsiri run --engine llm:claude:claude-sonnet-4-6
 uv run tafsiri run --engine llm:openai:gpt-4o-mini
 uv run tafsiri run --engine llm:ollama:qwen2.5:7b-instruct   # local, free
@@ -171,7 +171,7 @@ uv run tafsiri run --engine llm:ollama:qwen2.5:7b-instruct   # local, free
 | Engine | What | Notes |
 | ------ | ---- | ----- |
 | `daraja` | Daraja AI / Babel, purpose-built for African languages | returns a confidence score |
-| `llm:<provider>:<model>` | any chat model as a translator | no native confidence — lean on back-translation + judge |
+| `llm:<provider>:<model>` | any chat model as a translator | no native confidence - lean on back-translation + judge |
 
 Add an engine of your own by implementing the `Translator` protocol (see
 `providers/daraja.py`) and extending `providers/factory.py`.
@@ -182,18 +182,18 @@ Add an engine of your own by implementing the `Translator` protocol (see
 | ------------------ | --------------------------------------------- | ----------------- |
 | `confidence`       | Babel's own confidence score                  | free (no calls)   |
 | `back_translation` | Round-trips back to English, measures drift   | +1 API call each  |
-| `llm_judge`        | An LLM rates adequacy + fluency (1–5)          | +1 LLM call each  |
+| `llm_judge`        | An LLM rates adequacy + fluency (1-5)          | +1 LLM call each  |
 
 The aggregate score is a weighted mean of whichever signals are available;
 back-translation and the judge are weighted higher than self-reported
 confidence. A score is bucketed into a **rating**:
 
-- `good` ≥ 0.85 — trustworthy enough to keep as-is
-- `marginal` ≥ 0.70 — usable, but flag for human review
-- `risky` < 0.70 — do not rely on
-- `no_score` — translation failed or nothing could be scored
+- `good` ≥ 0.85 - trustworthy enough to keep as-is
+- `marginal` ≥ 0.70 - usable, but flag for human review
+- `risky` < 0.70 - do not rely on
+- `no_score` - translation failed or nothing could be scored
 
-> **New to evals?** See [`docs/evals.md`](docs/evals.md) — a from-scratch guide
+> **New to evals?** See [`docs/evals.md`](docs/evals.md) - a from-scratch guide
 > to what each signal means, how they combine, how to read a report, and where
 > they mislead.
 
@@ -203,7 +203,7 @@ The judge is any LangChain chat model. Pick it with `--judge provider:model`.
 Friendly aliases: `claude`→Anthropic, `gemini`→Google, `gpt`→OpenAI.
 
 ```powershell
-# local, free, private — needs a running Ollama server
+# local, free, private - needs a running Ollama server
 uv run tafsiri run --judge ollama:llama3.1
 
 # hosted providers (set the provider's own API key in your env)
@@ -213,7 +213,7 @@ uv run tafsiri run --judge gemini:gemini-2.0-flash
 ```
 
 Install the matching extra first (`uv sync --extra openai|anthropic|gemini|ollama`).
-The judge prompt lives in `tafsiri.prompts` and is overridable — see below.
+The judge prompt lives in `tafsiri.prompts` and is overridable - see below.
 
 ## Outputs
 
@@ -221,8 +221,8 @@ For run `run-YYYYMMDD-HHMMSS`, written to `out/`:
 
 | File                  | What                                                    |
 | --------------------- | ------------------------------------------------------- |
-| `<run>.chat.jsonl`    | Training data — chat format `{messages:[...]}`          |
-| `<run>.pairs.jsonl`   | Training data — `{input, output, src_lang, tgt_lang}`   |
+| `<run>.chat.jsonl`    | Training data - chat format `{messages:[...]}`          |
+| `<run>.pairs.jsonl`   | Training data - `{input, output, src_lang, tgt_lang}`   |
 | `<run>.csv`           | Every translation + aggregate **and per-signal** scores |
 | `<run>.report.json`   | Score summary incl. per-signal/language/speaker breakdowns |
 | `<run>.report.md`     | Shareable Markdown findings report                      |
@@ -249,7 +249,7 @@ Example training line (chat format):
 
 ## Persistence (SQLite)
 
-Every run streams to `tafsiri.db` as it goes — interrupt it and finished
+Every run streams to `tafsiri.db` as it goes - interrupt it and finished
 records are already safe. Writes are idempotent (keyed by run + source +
 language), so re-running updates in place.
 
@@ -266,7 +266,7 @@ levels:
 - **Per-call retry** with backoff that honors the `Retry-After` header.
 - **Adaptive circuit-breaker**: after several consecutive failures it cools down
   with escalating backoff, and after a few cooldowns with no recovery it stops
-  the run *cleanly* and tells you how to continue — rather than hammering the API.
+  the run *cleanly* and tells you how to continue - rather than hammering the API.
 - **Resume**: every successful translation is in SQLite, so you can pick up
   exactly where you left off without paying for the same calls twice.
 
@@ -274,13 +274,13 @@ levels:
 # gentler pacing, fewer calls
 uv run tafsiri run --delay 2 --no-backtranslation
 
-# continue an interrupted/rate-limited run — reuses what's already stored
+# continue an interrupted/rate-limited run - reuses what's already stored
 uv run tafsiri run --run-id full-4lang --resume --delay 2
 ```
 
 ```powershell
 # best-effort: when failures pile up, stop calling and just evaluate what
-# already succeeded — no cooldowns, clean exit
+# already succeeded - no cooldowns, clean exit
 uv run tafsiri run --abandon-calls
 ```
 
@@ -303,7 +303,7 @@ uv run tafsiri run --source mydata.csv --langs Swahili,Amharic
 
 ### Bundled sample datasets
 
-Ready-to-run datasets live in [`samples/`](samples/), one folder per domain —
+Ready-to-run datasets live in [`samples/`](samples/), one folder per domain -
 **emergency, healthcare, finance, tech, road-accidents, conversations** (64
 records total). See [`samples/README.md`](samples/README.md) for the catalog and
 a step-by-step full-pipeline walkthrough.
@@ -314,7 +314,7 @@ uv run tafsiri run --source samples/finance/finance_v1.jsonl --langs Swahili --p
 
 ## Customizing prompts
 
-All prompt text lives in the importable `tafsiri.prompts` package — nothing is
+All prompt text lives in the importable `tafsiri.prompts` package - nothing is
 buried inline. Override per evaluator:
 
 ```python
@@ -373,7 +373,7 @@ Exit codes: `0` success (or clean abandon), `2` config error (e.g. missing key),
 ## Development
 
 ```powershell
-uv run pytest                 # full suite (77 tests), network-free — providers/judge are faked
+uv run pytest                 # full suite (77 tests), network-free - providers/judge are faked
 uv run pre-commit install     # local secret-scanning + hygiene hooks (one time)
 ```
 
@@ -384,10 +384,10 @@ src/tafsiri/
   config.py        sources.py      scoring.py      storage.py
   schema.py        providers/      evaluators/     export.py
   serialize.py     pipeline.py     cli.py          progress.py
-  ui.py            interactive.py  (presentation layer — consumes the core)
+  ui.py            interactive.py  (presentation layer - consumes the core)
   prompts/         importable, overridable prompt text
 samples/           datasets by domain + full-pipeline guide
-docs/              guides — see docs/evals.md
+docs/              guides - see docs/evals.md
 tests/             network-free unit tests
 ```
 
@@ -398,12 +398,12 @@ tests/             network-free unit tests
 
 ## Dependencies
 
-- **[Daraja AI](https://daraja.ai)** — the translation provider (Babel models).
+- **[Daraja AI](https://daraja.ai)** - the translation provider (Babel models).
   Requires a `DARAJA_API_KEY`.
-- **LangChain** (optional) — powers the LLM-as-judge. Pick a provider extra:
+- **LangChain** (optional) - powers the LLM-as-judge. Pick a provider extra:
   `[openai]`, `[anthropic]` (Claude), `[gemini]`, or `[ollama]` (local).
-- **rich** — colors, tables, panels, and prompts for the CLI.
-- **requests**, **python-dotenv** — core.
+- **rich** - colors, tables, panels, and prompts for the CLI.
+- **requests**, **python-dotenv** - core.
 
 ## License
 

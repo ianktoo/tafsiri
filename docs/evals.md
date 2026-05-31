@@ -1,6 +1,6 @@
 # A practical guide to translation evals
 
-A from-scratch guide to **evaluating machine translation** — what the signals
+A from-scratch guide to **evaluating machine translation** - what the signals
 mean, how to combine them, how to read the results, and where they mislead.
 Written around `tafsiri`, but the ideas are general.
 
@@ -14,26 +14,26 @@ meaning is *more* dangerous than an obvious garble, because nobody double-checks
 it. In safety-critical settings (medical, emergency, legal, financial) that gap
 can cause real harm.
 
-This matters most for **low-resource languages** — many African languages
-included — where training data is scarce and quality is uneven. You cannot
+This matters most for **low-resource languages** - many African languages
+included - where training data is scarce and quality is uneven. You cannot
 assume "the model is good"; you have to **measure**, per language and per kind of
 text.
 
 So evaluation answers a specific question:
 
-> *How good is this model, for **this** language, on **this** kind of text — and
+> *How good is this model, for **this** language, on **this** kind of text - and
 > how confident am I in that judgment?*
 
 ---
 
 ## 2. Two families of evaluation
 
-**Reference-based** — compare the output against a human "gold" translation.
+**Reference-based** - compare the output against a human "gold" translation.
 Metrics: BLEU, chrF, METEOR, COMET. Accurate, but they need a reference
 translation for every sentence, which is expensive and often unavailable for
 low-resource languages.
 
-**Reference-free (quality estimation)** — judge a translation *without* a gold
+**Reference-free (quality estimation)** - judge a translation *without* a gold
 answer, using signals you can compute from the translation itself (and the
 source). Cheaper, scales to any language, and is what you need when you have no
 references.
@@ -45,17 +45,17 @@ references.
 ## 3. The three signals
 
 Each evaluator returns one score in **0..1** (higher = better), or `None` when it
-can't judge an item. They are deliberately independent — they fail in different
+can't judge an item. They are deliberately independent - they fail in different
 ways, so agreement between them is meaningful.
 
 ### 3.1 Confidence (the model's self-report)
 
-The engine returns its own confidence (Babel does this). **Cheap** — no extra
-calls — but it's a *self-assessment*. Models are often **overconfident**,
+The engine returns its own confidence (Babel does this). **Cheap** - no extra
+calls - but it's a *self-assessment*. Models are often **overconfident**,
 especially on languages they're weak at. Treat it as a weak prior, not proof.
 
 > In our Amharic run, confidence averaged **0.87** while the independent signals
-> sat at **0.67–0.73** — a textbook overconfidence gap.
+> sat at **0.67-0.73** - a textbook overconfidence gap.
 
 ### 3.2 Back-translation (round-trip)
 
@@ -73,7 +73,7 @@ measures similarity with a token-sequence ratio (stdlib `difflib`).
 **Strengths:** reference-free, language-agnostic, catches dropped/added meaning.
 **Caveats:**
 - It scores a *round trip*, so it blames the source→target and target→source
-  steps together — a perfect back-translation can still hide a flaw the reverse
+  steps together - a perfect back-translation can still hide a flaw the reverse
   step happened to "fix."
 - Surface similarity ≠ meaning. Paraphrases score lower than they deserve;
   fluent mistranslations can score higher than they deserve.
@@ -81,9 +81,9 @@ measures similarity with a token-sequence ratio (stdlib `difflib`).
 
 ### 3.3 LLM-as-judge
 
-Ask a separate, capable LLM to rate the translation on two axes, 1–5:
-- **adequacy** — is the full meaning preserved (nothing added or lost)?
-- **fluency** — is it natural, grammatical text in the target language?
+Ask a separate, capable LLM to rate the translation on two axes, 1-5:
+- **adequacy** - is the full meaning preserved (nothing added or lost)?
+- **fluency** - is it natural, grammatical text in the target language?
 
 `tafsiri` normalizes the mean of the two to 0..1. The judge is provider-agnostic
 (Claude / OpenAI / Gemini / local Ollama).
@@ -91,7 +91,7 @@ Ask a separate, capable LLM to rate the translation on two axes, 1–5:
 **Strengths:** closest to human judgment; can explain *why*; catches subtle
 meaning errors surface metrics miss.
 **Caveats:**
-- It's only as good as the judge model — and judges can be weak on the very
+- It's only as good as the judge model - and judges can be weak on the very
   low-resource languages you're testing (the same blind spot as the translator).
 - Known biases: length bias, self-preference (a model rating its own family),
   leniency. Use a *different, strong* model as judge where you can.
@@ -112,12 +112,12 @@ Default weights lean on the signals that test *meaning* hardest:
 
 | signal | weight | rationale |
 | ------ | ------ | --------- |
-| `confidence` | 1.0 | weak prior — it's a self-report |
+| `confidence` | 1.0 | weak prior - it's a self-report |
 | `back_translation` | 1.5 | independent evidence of preserved meaning |
 | `llm_judge` | 2.0 | closest proxy to human judgment |
 
 Weights are configurable (`scoring.Scorer`). There's no universally "correct"
-set — calibrate them against human ratings for your domain if you can.
+set - calibrate them against human ratings for your domain if you can.
 
 ---
 
@@ -130,9 +130,9 @@ The aggregate is bucketed into a rating:
 | `good` | ≥ 0.85 | trustworthy enough to use / keep as-is |
 | `marginal` | ≥ 0.70 | usable, but flag for human review |
 | `risky` | < 0.70 | do not rely on |
-| `no_score` | — | translation failed or nothing could be scored |
+| `no_score` | - | translation failed or nothing could be scored |
 
-The bar is **deliberately high for safety-critical text** — when a wrong
+The bar is **deliberately high for safety-critical text** - when a wrong
 translation can cost a life, "probably fine" isn't good enough. Lower the
 thresholds (`--good`, `--marginal`) for casual content where mistakes are cheap.
 
@@ -146,18 +146,18 @@ don't want low-quality pairs poisoning a fine-tune.
 A report has totals, a verdict, and three breakdowns. The breakdowns are where
 the insight is:
 
-- **by_signal** — average per evaluator. *Divergence is the story.* If
+- **by_signal** - average per evaluator. *Divergence is the story.* If
   `confidence` ≫ `back_translation`/`llm_judge`, the model is overconfident. If
   the judge and back-translation disagree, dig into examples.
-- **by_language** — where the model is strong vs weak. (Our runs: Swahili >
+- **by_language** - where the model is strong vs weak. (Our runs: Swahili >
   Yoruba > Amharic.)
-- **by_speaker / domain** — does quality drop on the *instructions* a responder
+- **by_speaker / domain** - does quality drop on the *instructions* a responder
   gives vs the *reports* a victim sends? In emergency data, the safety-critical
-  instructions were exactly where scores dipped — the most important place to
+  instructions were exactly where scores dipped - the most important place to
   catch problems.
 
 The **verdict** is a blunt summary (GOOD FIT / CONDITIONAL FIT / NOT A FIT). Any
-`risky` item ⇒ NOT A FIT for *unmonitored* use — keep a human in the loop.
+`risky` item ⇒ NOT A FIT for *unmonitored* use - keep a human in the loop.
 
 Export it: `tafsiri report <run-id> --format md --out findings.md`.
 
@@ -181,12 +181,12 @@ Export it: `tafsiri report <run-id> --format md --out findings.md`.
 
 The design lets you hold the **eval harness fixed** and vary one input:
 
-- **Compare engines** — run the same dataset through `--engine daraja` and
+- **Compare engines** - run the same dataset through `--engine daraja` and
   `--engine llm:claude:...`; compare `by_signal` and `by_language`. (Purpose-built
   vs general LLM is a genuine open question for African languages.)
-- **Compare languages** — one engine, many `--langs`; find the weak spots.
-- **Compare domains** — run each `samples/` domain; see where quality holds.
-- **Stress the methodology** — does back-translation agree with the judge? Where
+- **Compare languages** - one engine, many `--langs`; find the weak spots.
+- **Compare domains** - run each `samples/` domain; see where quality holds.
+- **Stress the methodology** - does back-translation agree with the judge? Where
   they diverge, which is right? That's a paper-sized question on its own.
 
 Everything persists to SQLite, so runs accumulate into a benchmark over time.
@@ -217,10 +217,10 @@ Pass it into `run_pipeline(..., evaluators=[...])`, give it a weight in the
 
 ## 10. Glossary
 
-- **Adequacy** — how completely meaning is preserved.
-- **Fluency** — how natural/grammatical the output reads.
-- **Low-resource language** — little training data; harder to model well.
-- **Reference / gold translation** — a known-correct human translation.
-- **Reference-free / quality estimation** — judging without a gold reference.
-- **Round-trip / back-translation** — translate out and back to compare.
-- **Calibration** — how well a confidence score matches real accuracy.
+- **Adequacy** - how completely meaning is preserved.
+- **Fluency** - how natural/grammatical the output reads.
+- **Low-resource language** - little training data; harder to model well.
+- **Reference / gold translation** - a known-correct human translation.
+- **Reference-free / quality estimation** - judging without a gold reference.
+- **Round-trip / back-translation** - translate out and back to compare.
+- **Calibration** - how well a confidence score matches real accuracy.

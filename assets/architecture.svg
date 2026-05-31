@@ -13,7 +13,7 @@
 
   <!-- Layer A: source data -->
   <rect x="290" y="92" width="420" height="46" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.5"/>
-  <text x="500" y="120" text-anchor="middle" font-size="14" font-weight="600" fill="#1e3a8a">Source data &#8212; samples/*.jsonl &#183; CSV (any domain)</text>
+  <text x="500" y="120" text-anchor="middle" font-size="14" font-weight="600" fill="#1e3a8a">Source data - samples/*.jsonl &#183; CSV (any domain)</text>
 
   <line x1="500" y1="140" x2="500" y2="167" stroke="#495057" stroke-width="2" marker-end="url(#arrow)"/>
 
