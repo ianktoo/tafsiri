@@ -153,9 +153,15 @@ uv run tafsiri run --delay 2 --no-backtranslation
 uv run tafsiri run --run-id full-4lang --resume --delay 2
 ```
 
+```powershell
+# best-effort: when failures pile up, stop calling and just evaluate what
+# already succeeded — no cooldowns, clean exit
+uv run tafsiri run --abandon-calls
+```
+
 Tuning flags: `--delay`, `--fail-threshold` (default 5), `--cooldown` (base
 seconds, doubles each time), `--max-cooldowns` (default 3; `--fail-threshold 0`
-disables the breaker).
+disables the breaker), `--abandon-calls` (take what you've got and move on).
 
 ## Bring your own data
 

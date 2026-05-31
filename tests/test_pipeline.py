@@ -88,6 +88,18 @@ def test_circuit_breaker_escalates_then_aborts():
     assert "persistent failures" in ei.value.reason
 
 
+def test_abandon_stops_and_keeps_partial_without_error():
+    translator = AlwaysFailTranslator()
+    sources = [SourceRecord(id=str(i), text="t") for i in range(50)]
+    records = run_pipeline(sources, ["Swahili"], translator, [ConfidenceEvaluator()],
+                           fail_threshold=3, abandon=True,
+                           sleep=lambda s: (_ for _ in ()).throw(
+                               AssertionError("abandon must not cool down")))
+    # stopped right at the threshold; no exception, no retries
+    assert len(records) == 3
+    assert translator.calls == 3
+
+
 def test_circuit_breaker_resets_on_recovery():
     # one failure then all successes -> never trips the breaker
     translator = FakeTranslator(fail_for={"bad"})

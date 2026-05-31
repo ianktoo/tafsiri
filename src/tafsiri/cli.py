@@ -134,6 +134,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             fail_threshold=args.fail_threshold,
             cooldown_base=args.cooldown,
             max_cooldowns=args.max_cooldowns,
+            abandon=args.abandon_calls,
         )
     except RateLimitAbort as e:
         new_records = e.records
@@ -265,6 +266,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="base cooldown seconds, doubles each time (default 5)")
     r.add_argument("--max-cooldowns", type=int, default=3,
                    help="cooldowns to attempt before stopping the run (default 3)")
+    r.add_argument("--abandon-calls", action="store_true",
+                   help="on a run of failures, stop calling immediately and just "
+                        "evaluate/export what succeeded so far (no cooldowns, clean exit)")
     r.set_defaults(func=cmd_run)
 
     rl = sub.add_parser("runs", help="list stored runs")

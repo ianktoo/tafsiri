@@ -49,6 +49,7 @@ def run_pipeline(
     fail_threshold: int = 0,
     cooldown_base: float = 5.0,
     max_cooldowns: int = 0,
+    abandon: bool = False,
     sleep: Callable[[float], None] = time.sleep,
 ) -> list[TranslatedRecord]:
     """Translate every source into every target language, evaluate, and score.
@@ -62,6 +63,10 @@ def run_pipeline(
     ``fail_threshold`` translations fail in a row, sleep an escalating cooldown
     (``cooldown_base`` * 2**n) and keep going; after ``max_cooldowns`` such
     cooldowns without a success in between, raise ``RateLimitAbort``.
+
+    ``abandon``: when True, the first time ``fail_threshold`` failures occur in a
+    row the run stops immediately and returns the records collected so far — no
+    cooldowns, no retrying, no error. "Take what I've got and evaluate that."
     """
     scorer = scorer or Scorer()
     skip = skip or set()
@@ -102,6 +107,11 @@ def run_pipeline(
                 else:
                     consecutive_fails += 1
                     if consecutive_fails >= fail_threshold:
+                        if abandon:
+                            emit(f"Abandoning remaining calls after "
+                                 f"{consecutive_fails} consecutive failures — "
+                                 f"proceeding with {len(out)} collected result(s).")
+                            return out
                         if cooldowns_used >= max_cooldowns:
                             reason = (
                                 f"Stopped after {cooldowns_used} cooldown(s) with "
