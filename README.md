@@ -83,7 +83,7 @@ pip install -r requirements.txt   # then: pip install -e . to get the `tafsiri` 
 Add your Daraja AI key to `.env` (gitignored) — copy the template:
 
 ```bash
-cp .env.example .env        # then edit: DARAJA_API_KEY=dk_...
+cp .env.example .env        # then edit in your real key
 ```
 
 ## Quickstart

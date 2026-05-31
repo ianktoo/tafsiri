@@ -21,7 +21,7 @@ A complete run, start to finish.
 
 ```powershell
 uv sync                                  # core deps
-"DARAJA_API_KEY=dk_..." | Out-File .env  # or edit .env directly
+cp .env.example .env                     # then edit in your real key
 ```
 
 **2. Pick a sample and do a quick trial** (one language, few rows, with a live bar)

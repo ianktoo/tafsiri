@@ -1,0 +1,12 @@
+# GitGuardian config. The repo contains no real secrets — keys live only in
+# .env (gitignored). These paths hold deliberate placeholders / test fixtures.
+version: 2
+secret:
+  ignored-paths:
+    - ".env.example"
+    - "tests/test_providers.py"
+    - "tests/test_factory.py"
+  ignored-matches:
+    # placeholder tokens, not real credentials
+    - name: "daraja key placeholder"
+      match: "dk_your_key_here"
