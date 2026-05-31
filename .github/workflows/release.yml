@@ -1,0 +1,43 @@
+name: Release
+
+# Triggered by pushing a version tag, e.g. `git tag v0.0.1 && git push --tags`.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write          # needed to create the GitHub Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      # Gate the release on a green test run (network-free, no API cost).
+      - run: uv sync --extra dev
+      - run: uv run pytest -q
+
+      # Build the universal wheel + sdist.
+      - run: uv build
+      - run: uv run python -c "import pathlib; [print(p.name) for p in pathlib.Path('dist').iterdir()]"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          body: |
+            **tafsiri ${{ github.ref_name }}** — generate & evaluate fine-tuning-ready
+            African-language translation datasets.
+
+            Install from the attached wheel:
+            ```bash
+            pip install tafsiri-*-py3-none-any.whl   # or: uv tool install ./tafsiri-*.whl
+            ```
+
+            See the README and `docs/evals.md` for usage.
