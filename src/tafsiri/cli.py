@@ -58,6 +58,15 @@ def cmd_run(args: argparse.Namespace) -> int:
         print(f"Could not init engine {args.engine!r}: {e}", file=sys.stderr)
         return 2
 
+    delay = settings.request_delay if args.delay is None else args.delay
+
+    # Concurrency (opt-in). A shared rate limiter wraps the translator so every
+    # provider call — forward and back-translation — is globally spaced; workers
+    # then overlap network waits. Default (1) keeps the serial path untouched.
+    if args.concurrency > 1:
+        from tafsiri.ratelimit import RateLimiter, RateLimitedTranslator
+        translator = RateLimitedTranslator(translator, RateLimiter(delay))
+
     evaluators = [ConfidenceEvaluator()]
     if not args.no_backtranslation:
         evaluators.append(BackTranslationEvaluator(translator))
@@ -92,7 +101,6 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"Run {run_id}: {len(sources)} sources x {len(langs)} langs = {total} "
           f"translations ({len(skip)} cached, {total - len(skip)} to fetch) -> db {args.db}")
 
-    delay = settings.request_delay if args.delay is None else args.delay
     progress = Progress(total - len(skip), enabled=args.progress)
 
     def _on_record(rec):
@@ -113,6 +121,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             cooldown_base=args.cooldown,
             max_cooldowns=args.max_cooldowns,
             abandon=args.abandon_calls,
+            concurrency=args.concurrency,
         )
     except RateLimitAbort as e:
         new_records = e.records
@@ -249,6 +258,10 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--progress", action="store_true",
                    help="show a live progress bar + status line (TTY only; "
                         "plain output otherwise)")
+    r.add_argument("--concurrency", type=int, default=1,
+                   help="parallel worker threads for I/O (default 1 = serial, "
+                        "safest for rate limits). >1 shares a rate limiter spaced "
+                        "by --delay; the escalating-cooldown breaker is serial-only")
     r.set_defaults(func=cmd_run)
 
     rl = sub.add_parser("runs", help="list stored runs")

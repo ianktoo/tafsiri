@@ -288,6 +288,24 @@ Tuning flags: `--delay`, `--fail-threshold` (default 5), `--cooldown` (base
 seconds, doubles each time), `--max-cooldowns` (default 3; `--fail-threshold 0`
 disables the breaker), `--abandon-calls` (take what you've got and move on).
 
+### Concurrency
+
+The work is I/O-bound (waiting on the network), so speedups come from
+*concurrency*, not multiprocessing. `--concurrency N` fans translations out over
+N worker threads:
+
+```powershell
+uv run tafsiri run --concurrency 4 --delay 0.5   # 4 workers, calls spaced 0.5s
+```
+
+- **Default is 1 (serial)** - the safest behavior under tight rate limits, and
+  fully deterministic.
+- With `N > 1` a single shared rate limiter spaces every provider call (forward
+  and back-translation) by `--delay`, so concurrency overlaps network waits
+  without raising your request rate.
+- The escalating-cooldown breaker is serial-only; in concurrent mode a failure
+  streak stops the run (resume to continue).
+
 ## Bring your own data
 
 Source files are domain-agnostic JSONL or CSV. Required field: `text`.
@@ -365,6 +383,7 @@ Flags for `tafsiri run`:
 | `--cooldown`          | 5.0                           | base cooldown seconds (doubles each time)                      |
 | `--max-cooldowns`     | 3                             | cooldowns to attempt before stopping cleanly                   |
 | `--abandon-calls`     | off                           | on a failure streak, stop calling and evaluate what succeeded  |
+| `--concurrency`       | 1 (serial)                    | parallel worker threads (I/O-bound); shares a rate limiter spaced by `--delay` |
 | `--progress`          | off                           | live progress bar + status line (TTY only; plain output otherwise) |
 
 Exit codes: `0` success (or clean abandon), `2` config error (e.g. missing key),
@@ -373,7 +392,7 @@ Exit codes: `0` success (or clean abandon), `2` config error (e.g. missing key),
 ## Development
 
 ```powershell
-uv run pytest                 # full suite (77 tests), network-free - providers/judge are faked
+uv run pytest                 # full suite (84 tests), network-free - providers/judge are faked
 uv run pre-commit install     # local secret-scanning + hygiene hooks (one time)
 ```
 
@@ -384,6 +403,7 @@ src/tafsiri/
   config.py        sources.py      scoring.py      storage.py
   schema.py        providers/      evaluators/     export.py
   serialize.py     pipeline.py     cli.py          progress.py
+  ratelimit.py     (shared rate limiter + translator wrapper for concurrency)
   ui.py            interactive.py  (presentation layer - consumes the core)
   prompts/         importable, overridable prompt text
 samples/           datasets by domain + full-pipeline guide

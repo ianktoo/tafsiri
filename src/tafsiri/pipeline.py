@@ -18,6 +18,7 @@ Two resilience features for rate-limited providers:
 from __future__ import annotations
 
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, Iterable, Optional
 
 from tafsiri.evaluators.base import Evaluator
@@ -50,6 +51,7 @@ def run_pipeline(
     cooldown_base: float = 5.0,
     max_cooldowns: int = 0,
     abandon: bool = False,
+    concurrency: int = 1,
     sleep: Callable[[float], None] = time.sleep,
 ) -> list[TranslatedRecord]:
     """Translate every source into every target language, evaluate, and score.
@@ -58,6 +60,11 @@ def run_pipeline(
     to a sink (e.g. SQLite) so nothing is lost if the run is interrupted.
 
     ``skip`` is a set of (source_id, target_lang) to leave untouched (resume).
+
+    ``concurrency``: 1 (default) runs serially — deterministic, with the full
+    cooldown/abandon circuit-breaker. >1 fans work out over a thread pool (I/O
+    bound: overlaps network waits). Rate limiting in that mode is the caller's
+    job — pass a RateLimitedTranslator. See ``_run_concurrent``.
 
     Circuit-breaker (active when ``fail_threshold`` > 0): once
     ``fail_threshold`` translations fail in a row, sleep an escalating cooldown
@@ -70,14 +77,19 @@ def run_pipeline(
     """
     scorer = scorer or Scorer()
     skip = skip or set()
-    out: list[TranslatedRecord] = []
-
-    consecutive_fails = 0
-    cooldowns_used = 0
 
     def emit(msg: str) -> None:
         if on_event is not None:
             on_event(msg)
+
+    if concurrency and concurrency > 1:
+        return _run_concurrent(
+            list(sources), target_langs, translator, evaluators, scorer,
+            on_record, skip, emit, fail_threshold, abandon, concurrency)
+
+    out: list[TranslatedRecord] = []
+    consecutive_fails = 0
+    cooldowns_used = 0
 
     for source in sources:
         for tgt in target_langs:
@@ -131,4 +143,78 @@ def run_pipeline(
             if delay:
                 sleep(delay)
 
+    return out
+
+
+def _run_concurrent(
+    sources: list[SourceRecord],
+    target_langs: list[str],
+    translator: Translator,
+    evaluators: list[Evaluator],
+    scorer: Scorer,
+    on_record: Optional[Callable[[TranslatedRecord], None]],
+    skip: set[tuple[str, str]],
+    emit: Callable[[str], None],
+    fail_threshold: int,
+    abandon: bool,
+    concurrency: int,
+) -> list[TranslatedRecord]:
+    """Thread-pool execution for I/O-bound runs.
+
+    Workers only translate + evaluate + score (no shared I/O). Results are
+    consumed on the calling thread as they complete, so ``on_record`` (SQLite,
+    progress) stays single-threaded. Output is returned in submission order for
+    stable display. The circuit-breaker here stops on a failure streak (abandon
+    -> return partial, else raise RateLimitAbort); the escalating-cooldown loop
+    is a serial-mode feature.
+    """
+    pairs = [(s, t) for s in sources for t in target_langs
+             if (s.id, t) not in skip]
+
+    def work(item):
+        idx, (source, tgt) = item
+        translation = translator.translate(source.text, source.src_lang, tgt)
+        signals = []
+        if translation.ok:
+            for ev in evaluators:
+                signals.append(ev.evaluate(source, translation))
+        evaluation = (scorer.score(signals) if signals
+                      else EvalResult(rating="no_score"))
+        return idx, TranslatedRecord(source=source, translation=translation,
+                                     evaluation=evaluation)
+
+    results: dict[int, TranslatedRecord] = {}
+    consecutive_fails = 0
+    tripped = False
+
+    with ThreadPoolExecutor(max_workers=concurrency) as ex:
+        futures = [ex.submit(work, (i, p)) for i, p in enumerate(pairs)]
+        try:
+            for fut in as_completed(futures):
+                idx, record = fut.result()
+                results[idx] = record
+                if on_record is not None:
+                    on_record(record)
+                if fail_threshold > 0:
+                    if record.translation.ok:
+                        consecutive_fails = 0
+                    else:
+                        consecutive_fails += 1
+                        if consecutive_fails >= fail_threshold:
+                            tripped = True
+                            break
+        finally:
+            for f in futures:
+                f.cancel()
+
+    out = [results[i] for i in sorted(results)]
+    if tripped:
+        if abandon:
+            emit(f"Abandoning remaining calls after {fail_threshold} failures "
+                 f"— proceeding with {len(out)} collected result(s).")
+            return out
+        reason = (f"Stopped after a streak of {fail_threshold} failures "
+                  f"(concurrent mode). {len(out)} item(s) processed.")
+        emit(reason)
+        raise RateLimitAbort(out, reason)
     return out

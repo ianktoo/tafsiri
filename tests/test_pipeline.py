@@ -53,6 +53,43 @@ def test_pipeline_records_failed_translation_without_crashing():
     assert by_id["b"].evaluation.rating == "no_score"
 
 
+def test_concurrent_matches_serial_results_and_order():
+    sources = [SourceRecord(id=str(i), text=f"t{i}") for i in range(12)]
+    serial = run_pipeline(sources, ["Swahili", "Yoruba"], FakeTranslator(),
+                          [ConfidenceEvaluator()], concurrency=1)
+    conc = run_pipeline(sources, ["Swahili", "Yoruba"], FakeTranslator(),
+                        [ConfidenceEvaluator()], concurrency=4)
+    key = lambda recs: [(r.source.id, r.translation.tgt_lang) for r in recs]
+    # same set of (source, lang) pairs, returned in the same submission order
+    assert key(serial) == key(conc)
+    assert len(conc) == 24
+
+
+def test_concurrent_streams_every_record_once():
+    seen = []
+    run_pipeline(_sources(), ["Swahili", "Yoruba"], FakeTranslator(),
+                 [ConfidenceEvaluator()], concurrency=4,
+                 on_record=lambda r: seen.append((r.source.id, r.translation.tgt_lang)))
+    assert sorted(seen) == sorted([(s.id, l) for s in _sources()
+                                   for l in ["Swahili", "Yoruba"]])
+
+
+def test_concurrent_abandon_returns_partial():
+    sources = [SourceRecord(id=str(i), text="t") for i in range(20)]
+    records = run_pipeline(sources, ["Swahili"], AlwaysFailTranslator(),
+                           [ConfidenceEvaluator()], concurrency=4,
+                           fail_threshold=3, abandon=True)
+    assert all(not r.translation.ok for r in records)
+    assert len(records) >= 3        # stopped after the failure streak
+
+
+def test_concurrent_breaker_raises_without_abandon():
+    sources = [SourceRecord(id=str(i), text="t") for i in range(20)]
+    with pytest.raises(RateLimitAbort):
+        run_pipeline(sources, ["Swahili"], AlwaysFailTranslator(),
+                     [ConfidenceEvaluator()], concurrency=4, fail_threshold=3)
+
+
 def test_pipeline_with_backtranslation_evaluator():
     translator = EchoBackTranslator()
     records = run_pipeline([SourceRecord(id="a", text="hello", src_lang="English")],
