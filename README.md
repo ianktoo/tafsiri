@@ -173,17 +173,12 @@ tests/             network-free unit tests
 - A `ghost.build` sink (persist evals/results to ghost.build alongside SQLite).
 - Back-translation enabled by default once provider rate limits allow.
 
-## Acknowledgments
+## Dependencies
 
-Huge thanks to the **[Daraja AI](https://daraja.ai)** team. Their *Babel*
-models — purpose-built for the linguistic structure of Swahili, Yoruba,
-Amharic, Creole, and other African languages that mainstream models overlook —
-are what make this project possible. `tafsiri` exists to put that work to use:
-turning Babel's translations into evaluated, fine-tuning-ready datasets so more
-people can build for the African continent and its diaspora.
-
-If you're on the Daraja team: thank you for building something genuinely novel.
-We'd love your feedback. 🌍
+- **[Daraja AI](https://daraja.ai)** — the translation provider (Babel models).
+  Requires a `DARAJA_API_KEY`.
+- **LangChain** (optional, `[judge]`) — powers the LLM-as-judge evaluator.
+- **requests**, **python-dotenv** — core.
 
 ## License
 
