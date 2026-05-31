@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from tafsiri.schema import EvalSignal, TranslatedRecord
+from tafsiri.schema import (
+    EvalResult,
+    EvalSignal,
+    SourceRecord,
+    TranslatedRecord,
+    Translation,
+)
 
 
 def signals_to_list(signals: list[EvalSignal]) -> list[dict]:
@@ -35,3 +41,25 @@ def flatten_record(rec: TranslatedRecord) -> dict[str, Any]:
         if k in s.meta:
             row[k] = s.meta[k]
     return row
+
+
+def record_from_row(row: dict[str, Any]) -> TranslatedRecord:
+    """Inverse of ``flatten_record`` — rebuild a TranslatedRecord from a stored
+    row (e.g. a SQLite fetch) so cached results can be reused on resume."""
+    meta = dict(row.get("meta") or {})
+    src_lang = row.get("src_lang") or "English"
+    source = SourceRecord(id=row["source_id"], text=row.get("source_text") or "",
+                          src_lang=src_lang, meta=meta)
+    translation = Translation(
+        src_lang=src_lang, tgt_lang=row["tgt_lang"], text=row.get("translation"),
+        confidence=row.get("confidence"), model=row.get("model"),
+        ok=bool(row.get("ok")), error=row.get("error"),
+    )
+    signals = [EvalSignal(name=s.get("name"), score=s.get("score"),
+                          detail=s.get("detail") or {})
+               for s in (row.get("signals") or [])]
+    evaluation = EvalResult(signals=signals,
+                            aggregate_score=row.get("aggregate_score"),
+                            rating=row.get("rating") or "no_score")
+    return TranslatedRecord(source=source, translation=translation,
+                            evaluation=evaluation)

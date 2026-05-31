@@ -1,9 +1,23 @@
+import pytest
+
 from tafsiri.evaluators.backtranslation import BackTranslationEvaluator
 from tafsiri.evaluators.confidence import ConfidenceEvaluator
-from tafsiri.pipeline import run_pipeline
-from tafsiri.schema import SourceRecord
+from tafsiri.pipeline import RateLimitAbort, run_pipeline
+from tafsiri.schema import SourceRecord, Translation
 
 from conftest import EchoBackTranslator, FakeTranslator
+
+
+class AlwaysFailTranslator:
+    name = "always-fail"
+
+    def __init__(self):
+        self.calls = 0
+
+    def translate(self, text, src_lang, tgt_lang):
+        self.calls += 1
+        return Translation(src_lang=src_lang, tgt_lang=tgt_lang, ok=False,
+                           error="HTTP 429: Too many requests")
 
 
 def _sources():
@@ -47,3 +61,39 @@ def test_pipeline_with_backtranslation_evaluator():
     rec = records[0]
     bt = rec.evaluation.signal("back_translation")
     assert bt is not None and bt.score == 1.0
+
+
+def test_pipeline_skips_given_keys():
+    translator = FakeTranslator()
+    records = run_pipeline(_sources(), ["Swahili"], translator,
+                           [ConfidenceEvaluator()], skip={("a", "Swahili")})
+    ids = [(r.source.id, r.translation.tgt_lang) for r in records]
+    assert ("a", "Swahili") not in ids
+    assert ("b", "Swahili") in ids
+    # the skipped source's text was never sent to the translator
+    assert all(call[0] != "hello" for call in translator.calls)
+
+
+def test_circuit_breaker_escalates_then_aborts():
+    translator = AlwaysFailTranslator()
+    sources = [SourceRecord(id=str(i), text="t") for i in range(50)]
+    sleeps: list[float] = []
+    with pytest.raises(RateLimitAbort) as ei:
+        run_pipeline(sources, ["Swahili"], translator, [ConfidenceEvaluator()],
+                     fail_threshold=3, max_cooldowns=2, cooldown_base=1.0,
+                     sleep=lambda s: sleeps.append(s))
+    # cooldown after 3 fails (1s), after 3 more (2s), then abort on the 3rd hit
+    assert sleeps == [1.0, 2.0]
+    assert len(ei.value.records) == 9  # 3 * 3 failures processed before abort
+    assert "persistent failures" in ei.value.reason
+
+
+def test_circuit_breaker_resets_on_recovery():
+    # one failure then all successes -> never trips the breaker
+    translator = FakeTranslator(fail_for={"bad"})
+    sources = [SourceRecord(id="x", text="bad"),
+               SourceRecord(id="y", text="good")]
+    records = run_pipeline(sources, ["Swahili"], translator, [ConfidenceEvaluator()],
+                           fail_threshold=2, max_cooldowns=1, cooldown_base=1.0,
+                           sleep=lambda s: (_ for _ in ()).throw(AssertionError("should not sleep")))
+    assert len(records) == 2

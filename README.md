@@ -133,6 +133,30 @@ uv run tafsiri runs                 # list past runs
 uv run tafsiri report <run-id>      # print a stored run's report
 ```
 
+## Rate limits & resuming
+
+Translation APIs rate-limit (with good reason). `tafsiri` handles that on three
+levels:
+
+- **Per-call retry** with backoff that honors the `Retry-After` header.
+- **Adaptive circuit-breaker**: after several consecutive failures it cools down
+  with escalating backoff, and after a few cooldowns with no recovery it stops
+  the run *cleanly* and tells you how to continue — rather than hammering the API.
+- **Resume**: every successful translation is in SQLite, so you can pick up
+  exactly where you left off without paying for the same calls twice.
+
+```powershell
+# gentler pacing, fewer calls
+uv run tafsiri run --delay 2 --no-backtranslation
+
+# continue an interrupted/rate-limited run — reuses what's already stored
+uv run tafsiri run --run-id full-4lang --resume --delay 2
+```
+
+Tuning flags: `--delay`, `--fail-threshold` (default 5), `--cooldown` (base
+seconds, doubles each time), `--max-cooldowns` (default 3; `--fail-threshold 0`
+disables the breaker).
+
 ## Bring your own data
 
 Source files are domain-agnostic JSONL or CSV. Required field: `text`.

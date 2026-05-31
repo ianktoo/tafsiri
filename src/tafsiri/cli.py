@@ -29,10 +29,10 @@ from tafsiri.export import (
     write_pairs_jsonl,
     write_report,
 )
-from tafsiri.pipeline import run_pipeline
+from tafsiri.pipeline import RateLimitAbort, run_pipeline
 from tafsiri.providers import DarajaTranslator
 from tafsiri.scoring import Scorer
-from tafsiri.serialize import flatten_record
+from tafsiri.serialize import flatten_record, record_from_row
 from tafsiri.sources import load_source
 from tafsiri.storage import SQLiteStore
 
@@ -107,16 +107,39 @@ def cmd_run(args: argparse.Namespace) -> int:
             "judge": args.judge, "back_translation": not args.no_backtranslation}
     store.start_run(run_id, meta, created_at=datetime.now().isoformat(timespec="seconds"))
 
-    print(f"Run {run_id}: {len(sources)} sources x {len(langs)} langs "
-          f"= {len(sources) * len(langs)} translations -> db {args.db}")
+    # Resume: reuse already-successful (source, lang) pairs from the db.
+    skip: set[tuple[str, str]] = set()
+    cached: list = []
+    if args.resume:
+        for row in store.fetch_records(run_id):
+            if row["ok"]:
+                cached.append(record_from_row(row))
+                skip.add((row["source_id"], row["tgt_lang"]))
+        if skip:
+            print(f"Resuming run {run_id}: reusing {len(skip)} stored translation(s).")
+
+    total = len(sources) * len(langs)
+    print(f"Run {run_id}: {len(sources)} sources x {len(langs)} langs = {total} "
+          f"translations ({len(skip)} cached, {total - len(skip)} to fetch) -> db {args.db}")
 
     delay = settings.request_delay if args.delay is None else args.delay
-    records = run_pipeline(
-        sources, langs, translator, evaluators, scorer=scorer,
-        delay=delay,
-        on_record=lambda rec: store.save_record(run_id, rec),
-    )
+    aborted = None
+    try:
+        new_records = run_pipeline(
+            sources, langs, translator, evaluators, scorer=scorer,
+            delay=delay,
+            on_record=lambda rec: store.save_record(run_id, rec),
+            skip=skip,
+            on_event=lambda msg: print(f"  ⏳ {msg}"),
+            fail_threshold=args.fail_threshold,
+            cooldown_base=args.cooldown,
+            max_cooldowns=args.max_cooldowns,
+        )
+    except RateLimitAbort as e:
+        new_records = e.records
+        aborted = e.reason
 
+    records = cached + new_records
     _print_table(records)
 
     out_dir = Path(args.out_dir)
@@ -138,6 +161,19 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"  csv             : {csv_path}")
     print(f"  report          : {report_path}")
     print(f"  db              : {args.db}  (run_id={run_id})")
+
+    if aborted:
+        print("\n" + "!" * 64)
+        print("STOPPED EARLY — provider kept failing (likely rate limiting)")
+        print("!" * 64)
+        print(f"  {aborted}")
+        print("  Partial results are saved. To continue where this left off:")
+        print(f"    tafsiri run --run-id {run_id} --resume --delay {max(delay, 2.0):.0f}")
+        print("  Other options:")
+        print("    • retry later, once the rate-limit window resets")
+        print("    • raise --delay / lower call volume (e.g. --no-backtranslation)")
+        print("    • use a different API key or client")
+        return 3
     return 0
 
 
@@ -221,6 +257,14 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--limit", type=int, default=0, help="only the first N source rows")
     r.add_argument("--delay", type=float, default=None,
                    help="seconds between API calls (default 0.2; raise to avoid rate limits)")
+    r.add_argument("--resume", action="store_true",
+                   help="skip (source, lang) pairs already stored ok for this run-id")
+    r.add_argument("--fail-threshold", type=int, default=5,
+                   help="consecutive failures before a cooldown (0 disables; default 5)")
+    r.add_argument("--cooldown", type=float, default=5.0,
+                   help="base cooldown seconds, doubles each time (default 5)")
+    r.add_argument("--max-cooldowns", type=int, default=3,
+                   help="cooldowns to attempt before stopping the run (default 3)")
     r.set_defaults(func=cmd_run)
 
     rl = sub.add_parser("runs", help="list stored runs")
