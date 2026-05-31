@@ -52,6 +52,35 @@ reproducible evaluation pipeline fixed and lets you vary the inputs:
 The aim is to make it easy to ask - and answer with data - *"how good is this
 model, for this language, for this kind of text?"*
 
+## Use cases
+
+**Research (primary).** tafsiri is a reproducible harness for studying machine
+translation on low-resource African languages:
+
+- **Benchmark engines** - run the same dataset through Babel vs a general LLM
+  (`--engine llm:...`) and compare quality, holding the eval fixed.
+- **Map quality across languages and domains** - per-language / per-speaker
+  score breakdowns reveal where a model is strong or weak.
+- **Study the eval methods themselves** - where do confidence,
+  back-translation, and LLM-as-judge agree or diverge? (See [`docs/evals.md`](docs/evals.md).)
+- **Build datasets** - produce evaluated, fine-tuning-ready data, and let runs
+  accumulate in SQLite as a growing benchmark.
+
+**Applied.** The bundled [`samples/`](samples/) datasets mirror real domains
+where local-language translation matters and quality must be trusted:
+
+- **Emergency & humanitarian** - casualty / first-responder messages where a
+  mistranslation can cost lives (the origin use case).
+- **Healthcare & public health** - appointments, prescriptions, maternal and
+  chronic-care guidance.
+- **Financial inclusion** - mobile money, loans, fraud alerts, literacy.
+- **Tech & customer support** - troubleshooting, security, notifications.
+- **Road safety** - incident reporting and responder instructions.
+- **Everyday conversation** - greetings, directions, market, small talk.
+
+In every case the point is the same: not just *a* translation, but a translation
+you can tell whether to trust - and the data to make models better.
+
 ## Why it's built this way (separation of concerns)
 
 Each stage is one module with one job, so you can swap any piece:
