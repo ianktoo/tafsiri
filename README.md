@@ -431,6 +431,16 @@ tests/             network-free unit tests
 - **rich** - colors, tables, panels, and prompts for the CLI.
 - **requests**, **python-dotenv** - core.
 
+## Author
+
+Built by **Ian Too**.
+
+- Website: [iantoo.space](https://iantoo.space)
+- GitHub: [@ianktoo](https://github.com/ianktoo)
+- X / Twitter: [@ianktoo](https://twitter.com/ianktoo)
+- Hugging Face: [@ianktoo](https://huggingface.co/ianktoo)
+- LinkedIn: [in/ianktoo](https://www.linkedin.com/in/ianktoo)
+
 ## License
 
 [MIT](LICENSE).
