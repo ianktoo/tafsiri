@@ -1,0 +1,14 @@
+{"id": "flood-report", "text": "There is a flood in our village. The water is rising fast and we need rescue boats immediately.", "src_lang": "English", "speaker": "affected_party", "category": "natural_disaster"}
+{"id": "flood-instruction", "text": "Help is on the way. Move everyone to higher ground and stay together until the boats arrive.", "src_lang": "English", "speaker": "first_responder", "category": "natural_disaster"}
+{"id": "not-breathing-report", "text": "A child has stopped breathing and is not responding. Please send an ambulance now.", "src_lang": "English", "speaker": "affected_party", "category": "medical"}
+{"id": "not-breathing-instruction", "text": "Lay the child flat, tilt the head back, and give two slow breaths into the mouth every few seconds.", "src_lang": "English", "speaker": "first_responder", "category": "medical"}
+{"id": "bleeding-report", "text": "A man is bleeding heavily from a wound on his leg and he is becoming weak.", "src_lang": "English", "speaker": "affected_party", "category": "medical"}
+{"id": "bleeding-instruction", "text": "Press a clean cloth firmly onto the wound, keep him lying down, and raise the leg if you can.", "src_lang": "English", "speaker": "first_responder", "category": "medical"}
+{"id": "cholera-report", "text": "Many people here have severe diarrhea and vomiting, and we have no clean drinking water.", "src_lang": "English", "speaker": "affected_party", "category": "public_health"}
+{"id": "cholera-instruction", "text": "Boil all drinking water, give the sick person plenty of fluids, and bring them to the nearest clinic.", "src_lang": "English", "speaker": "first_responder", "category": "public_health"}
+{"id": "labor-report", "text": "A pregnant woman has been in labor for many hours and is in great pain. We need a midwife.", "src_lang": "English", "speaker": "affected_party", "category": "medical"}
+{"id": "labor-instruction", "text": "Keep her calm and lying on her side. A midwife is coming. Do not let her push until we arrive.", "src_lang": "English", "speaker": "first_responder", "category": "medical"}
+{"id": "snakebite-report", "text": "A child has been bitten by a snake on the leg and the area is swelling.", "src_lang": "English", "speaker": "affected_party", "category": "medical"}
+{"id": "snakebite-instruction", "text": "Keep the child still and the leg below the level of the heart. Do not cut the wound. Get to a hospital quickly.", "src_lang": "English", "speaker": "first_responder", "category": "medical"}
+{"id": "intruders-report", "text": "Armed men have entered the camp and people are hiding. We need security assistance urgently.", "src_lang": "English", "speaker": "affected_party", "category": "security"}
+{"id": "intruders-instruction", "text": "Stay quiet and out of sight, keep the children close, and do not move until officers reach you.", "src_lang": "English", "speaker": "first_responder", "category": "security"}
