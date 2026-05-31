@@ -102,45 +102,65 @@ The **core never imports the view**. `ui`/`interactive` sit on top and consume
 the plain data the core emits - so you can add another front-end (web, TUI)
 without touching the pipeline.
 
-## Install
+## Getting started
 
-```powershell
-uv sync                      # core
-uv sync --extra dev          # + pytest
-uv sync --extra ollama       # + local Ollama judge
-uv sync --extra openai       # + OpenAI judge
-uv sync --extra anthropic    # + Claude judge
-uv sync --extra gemini       # + Gemini judge
-```
+Follow these in order. **Prerequisites:** Python 3.11+ and
+[uv](https://docs.astral.sh/uv/). For the default engine you need a Daraja AI
+key - or skip the key and use a local Ollama model (step 4).
 
-Prefer pip? Core runtime deps are pinned in `requirements.txt`:
+**1. Get the code**
 
 ```bash
-pip install -r requirements.txt   # then: pip install -e . to get the `tafsiri` command
+git clone https://github.com/ianktoo/tafsiri.git
+cd tafsiri
 ```
 
-Add your Daraja AI key to `.env` (gitignored) - copy the template:
+**2. Install** (creates a local `.venv` with everything needed to run)
 
 ```bash
-cp .env.example .env        # then edit in your real key
+uv sync
 ```
 
-## Quickstart
+<details><summary>Optional extras &amp; pip alternative</summary>
 
-New here? Just run it - a guided wizard handles setup (key, engine, dataset,
-languages) and runs the pipeline:
+```bash
+uv sync --extra dev          # test tools (pytest)
+uv sync --extra ollama       # local Ollama judge/engine
+uv sync --extra openai       # OpenAI judge/engine   (also: anthropic, gemini)
+# Prefer pip instead of uv:
+pip install -r requirements.txt && pip install -e .
+```
+</details>
 
-```powershell
-uv run tafsiri            # interactive wizard
-uv run tafsiri init       # just the setup step (key entry + test)
+**3. Add your Daraja API key** (get one at [daraja.ai](https://daraja.ai))
+
+```bash
+cp .env.example .env         # then open .env and set DARAJA_API_KEY=dk_...
 ```
 
-Or drive everything with flags (scriptable, reproducible - the wizard is only a
-convenience on top):
+**4. Run it.** The guided wizard tests your key, then walks through engine,
+dataset, and languages:
 
-```powershell
-uv run tafsiri run
+```bash
+uv run tafsiri
 ```
+
+Already set up and prefer flags? Run a quick 3-row trial directly:
+
+```bash
+uv run tafsiri run --langs Swahili --limit 3
+```
+
+No Daraja key, but have [Ollama](https://ollama.com) running? Use a local
+engine - no key required:
+
+```bash
+uv run tafsiri run --engine llm:ollama:qwen2.5:7b-instruct --langs Swahili --limit 3
+```
+
+**5. Find your results** under `~/.tafsiri/out/` - training data
+(`.chat.jsonl` / `.pairs.jsonl`), a `.csv`, and `.report.json` / `.report.md`.
+Override the location with `--out-dir` (or `TAFSIRI_HOME`).
 
 ### Demo
 
@@ -171,16 +191,8 @@ Add an LLM-as-judge?  [Y/n] y  → ollama:qwen2.5:7b-instruct
  VERDICT: CONDITIONAL FIT - human-in-the-loop review for flagged items
 ```
 
-That translates each message into Swahili, Yoruba, Amharic, and Creole,
-evaluates with confidence + back-translation, scores each, persists to
-the SQLite db, and writes outputs under `~/.tafsiri/` (override with
-`--out-dir` / `--db`).
-
-Smaller / faster trial:
-
-```powershell
-uv run tafsiri run --langs Swahili --limit 3 --no-backtranslation
-```
+Each message is translated, evaluated by several signals, scored, persisted to
+SQLite, and exported - all of which is covered next.
 
 ## Translation engines (swappable)
 
