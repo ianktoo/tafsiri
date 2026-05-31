@@ -30,6 +30,7 @@ from tafsiri.export import (
     write_report,
 )
 from tafsiri.pipeline import RateLimitAbort, run_pipeline
+from tafsiri.progress import Progress
 from tafsiri.providers import DarajaTranslator
 from tafsiri.scoring import Scorer
 from tafsiri.serialize import flatten_record, record_from_row
@@ -123,14 +124,22 @@ def cmd_run(args: argparse.Namespace) -> int:
           f"translations ({len(skip)} cached, {total - len(skip)} to fetch) -> db {args.db}")
 
     delay = settings.request_delay if args.delay is None else args.delay
+    progress = Progress(total - len(skip), enabled=args.progress)
+
+    def _on_record(rec):
+        store.save_record(run_id, rec)
+        progress.update(
+            label=f"{rec.source.id} → {rec.translation.tgt_lang}",
+            ok=rec.translation.ok)
+
     aborted = None
     try:
         new_records = run_pipeline(
             sources, langs, translator, evaluators, scorer=scorer,
             delay=delay,
-            on_record=lambda rec: store.save_record(run_id, rec),
+            on_record=_on_record,
             skip=skip,
-            on_event=lambda msg: print(f"  ⏳ {msg}"),
+            on_event=lambda msg: progress.note(f"  ⏳ {msg}"),
             fail_threshold=args.fail_threshold,
             cooldown_base=args.cooldown,
             max_cooldowns=args.max_cooldowns,
@@ -139,6 +148,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     except RateLimitAbort as e:
         new_records = e.records
         aborted = e.reason
+    finally:
+        progress.finish()
 
     records = cached + new_records
     _print_table(records)
@@ -269,6 +280,9 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--abandon-calls", action="store_true",
                    help="on a run of failures, stop calling immediately and just "
                         "evaluate/export what succeeded so far (no cooldowns, clean exit)")
+    r.add_argument("--progress", action="store_true",
+                   help="show a live progress bar + status line (TTY only; "
+                        "plain output otherwise)")
     r.set_defaults(func=cmd_run)
 
     rl = sub.add_parser("runs", help="list stored runs")

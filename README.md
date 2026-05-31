@@ -43,6 +43,12 @@ uv sync --extra judge        # + LangChain (LLM-as-judge)
 uv sync --extra ollama       # + local Ollama judge support
 ```
 
+Prefer pip? Core runtime deps are pinned in `requirements.txt`:
+
+```bash
+pip install -r requirements.txt   # then: pip install -e . to get the `tafsiri` command
+```
+
 Add your Daraja AI key to `.env` (gitignored):
 
 ```
@@ -212,6 +218,7 @@ Flags for `tafsiri run`:
 | `--cooldown`          | 5.0                           | base cooldown seconds (doubles each time)                      |
 | `--max-cooldowns`     | 3                             | cooldowns to attempt before stopping cleanly                   |
 | `--abandon-calls`     | off                           | on a failure streak, stop calling and evaluate what succeeded  |
+| `--progress`          | off                           | live progress bar + status line (TTY only; plain output otherwise) |
 
 Exit codes: `0` success (or clean abandon), `2` config error (e.g. missing key),
 `3` stopped early by the circuit-breaker.
@@ -219,7 +226,7 @@ Exit codes: `0` success (or clean abandon), `2` config error (e.g. missing key),
 ## Development
 
 ```powershell
-uv run pytest          # full suite (47 tests), network-free — providers/judge are faked
+uv run pytest          # full suite (52 tests), network-free — providers/judge are faked
 ```
 
 ## Project layout
@@ -228,7 +235,7 @@ uv run pytest          # full suite (47 tests), network-free — providers/judge
 src/tafsiri/
   config.py        sources.py      scoring.py      storage.py
   schema.py        providers/      evaluators/     export.py
-  serialize.py     pipeline.py     cli.py
+  serialize.py     pipeline.py     cli.py          progress.py
 data/source/       emergency_v1.jsonl   (bundled example dataset)
 tests/             network-free unit tests
 ```
@@ -236,8 +243,6 @@ tests/             network-free unit tests
 ## Roadmap
 
 - A `ghost.build` sink (persist evals/results to ghost.build alongside SQLite).
-- A `--progress` flag: live progress bar + rotating status line for batch runs
-  (falls back to plain output when not a TTY).
 - More bundled datasets beyond the emergency example.
 
 ## Dependencies
