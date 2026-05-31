@@ -362,6 +362,9 @@ Recognized: `id`, `src_lang`/`lang`. Everything else is preserved as metadata.
 uv run tafsiri run --source mydata.csv --langs Swahili,Amharic
 ```
 
+Full input/output schema, conventions, and how to choose training data:
+[`docs/data.md`](docs/data.md).
+
 ### Bundled sample datasets
 
 Ready-to-run datasets live in [`samples/`](samples/), one folder per domain -
@@ -452,7 +455,7 @@ src/tafsiri/
   ui.py            interactive.py  (presentation layer - consumes the core)
   prompts/         importable, overridable prompt text
 samples/           datasets by domain + full-pipeline guide
-docs/              guides - see docs/evals.md
+docs/              guides - data.md, evals.md, cli.md
 tests/             network-free unit tests
 ```
 
