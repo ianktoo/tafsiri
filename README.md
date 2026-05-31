@@ -145,6 +145,10 @@ confidence. A score is bucketed into a **rating**:
 - `risky` < 0.70 — do not rely on
 - `no_score` — translation failed or nothing could be scored
 
+> **New to evals?** See [`docs/evals.md`](docs/evals.md) — a from-scratch guide
+> to what each signal means, how they combine, how to read a report, and where
+> they mislead.
+
 ### LLM-as-judge (provider-agnostic via LangChain)
 
 The judge is any LangChain chat model. Pick it with `--judge provider:model`.
@@ -171,8 +175,15 @@ For run `run-YYYYMMDD-HHMMSS`, written to `out/`:
 | --------------------- | ------------------------------------------------------- |
 | `<run>.chat.jsonl`    | Training data — chat format `{messages:[...]}`          |
 | `<run>.pairs.jsonl`   | Training data — `{input, output, src_lang, tgt_lang}`   |
-| `<run>.csv`           | Flat table of every translation + score                 |
-| `<run>.report.json`   | The score summary / fit verdict                         |
+| `<run>.csv`           | Every translation + aggregate **and per-signal** scores |
+| `<run>.report.json`   | Score summary incl. per-signal/language/speaker breakdowns |
+| `<run>.report.md`     | Shareable Markdown findings report                      |
+
+Re-export a stored run anytime, in any format:
+
+```powershell
+uv run tafsiri report <run-id> --format md --out findings.md   # or --format json
+```
 
 Training files only include translations at or above `--min-rating`
 (`marginal` by default, or `good`), so low-quality output never poisons your
@@ -276,7 +287,7 @@ Three commands:
 | ---------------------------- | --------------------------------------------------- |
 | `tafsiri run`                | translate → evaluate → score → persist → export     |
 | `tafsiri runs`               | list runs stored in the SQLite db                   |
-| `tafsiri report <run-id>`    | print the stored report for a run                   |
+| `tafsiri report <run-id>`    | print/export a stored report (`--format text\|json\|md --out FILE`) |
 
 Flags for `tafsiri run`:
 
@@ -308,7 +319,7 @@ Exit codes: `0` success (or clean abandon), `2` config error (e.g. missing key),
 ## Development
 
 ```powershell
-uv run pytest          # full suite (66 tests), network-free — providers/judge are faked
+uv run pytest          # full suite (70 tests), network-free — providers/judge are faked
 ```
 
 ## Project layout
@@ -320,6 +331,7 @@ src/tafsiri/
   serialize.py     pipeline.py     cli.py          progress.py
   prompts/         importable, overridable prompt text
 samples/           datasets by domain + full-pipeline guide
+docs/              guides — see docs/evals.md
 tests/             network-free unit tests
 ```
 

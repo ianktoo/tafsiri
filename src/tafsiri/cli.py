@@ -24,6 +24,8 @@ from tafsiri.evaluators import (
 )
 from tafsiri.export import (
     build_report,
+    build_report_from_rows,
+    render_markdown,
     write_chat_jsonl,
     write_csv,
     write_pairs_jsonl,
@@ -68,6 +70,8 @@ def _print_report(report: dict) -> None:
     print(f"  lowest score    : {report.get('lowest_score')}")
     c = report.get("rating_counts", {})
     print(f"  good/marginal/risky : {c.get('good',0)}/{c.get('marginal',0)}/{c.get('risky',0)}")
+    for sig, st in report.get("by_signal", {}).items():
+        print(f"  signal {sig:<16}: avg {st['avg_score']} (n={st['count']})")
     for lang, st in report.get("by_language", {}).items():
         print(f"  {lang:<10}: avg {st['avg_score']} (n={st['count']})")
     for sp, st in report.get("by_speaker", {}).items():
@@ -167,6 +171,10 @@ def cmd_run(args: argparse.Namespace) -> int:
     n_pairs = write_pairs_jsonl(records, pairs_path, min_rating=args.min_rating)
     write_csv(records, csv_path)
     report = write_report(records, report_path)
+    md_path = out_dir / f"{run_id}.report.md"
+    md_path.write_text(
+        render_markdown(report, run_id, [flatten_record(r) for r in records]),
+        encoding="utf-8")
     store.finish_run(run_id, report)
     store.close()
 
@@ -174,7 +182,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"\n  training (chat) : {chat_path}  ({n_chat} kept, min_rating={args.min_rating})")
     print(f"  training (pairs): {pairs_path}  ({n_pairs} kept)")
     print(f"  csv             : {csv_path}")
-    print(f"  report          : {report_path}")
+    print(f"  report (json)   : {report_path}")
+    print(f"  report (md)     : {md_path}")
     print(f"  db              : {args.db}  (run_id={run_id})")
 
     if aborted:
@@ -213,39 +222,25 @@ def cmd_report(args: argparse.Namespace) -> int:
     if not rows:
         print(f"No records for run {args.run_id!r} in {args.db}", file=sys.stderr)
         return 1
-    # Rebuild a report straight from stored rows (no re-translation needed).
-    report = _report_from_rows(rows)
-    _print_report(report)
+
+    report = build_report_from_rows(rows)
+
+    if args.format == "json":
+        text = json.dumps(report, ensure_ascii=False, indent=2)
+    elif args.format == "md":
+        text = render_markdown(report, args.run_id, rows)
+    else:  # text
+        if args.out:
+            print("--out is only used with --format json|md", file=sys.stderr)
+        _print_report(report)
+        return 0
+
+    if args.out:
+        Path(args.out).write_text(text, encoding="utf-8")
+        print(f"wrote {args.format} findings -> {args.out}")
+    else:
+        print(text)
     return 0
-
-
-def _report_from_rows(rows: list[dict]) -> dict:
-    total = len(rows)
-    ok = sum(1 for r in rows if r["ok"])
-    scores = [r["aggregate_score"] for r in rows if r["aggregate_score"] is not None]
-    counts: dict[str, int] = {}
-    for r in rows:
-        counts[r["rating"]] = counts.get(r["rating"], 0) + 1
-
-    def avg(v):
-        return round(sum(v) / len(v), 4) if v else None
-
-    by_lang: dict[str, list] = {}
-    by_speaker: dict[str, list] = {}
-    for r in rows:
-        if r["aggregate_score"] is None:
-            continue
-        by_lang.setdefault(r["tgt_lang"], []).append(r["aggregate_score"])
-        if r.get("speaker"):
-            by_speaker.setdefault(r["speaker"], []).append(r["aggregate_score"])
-    return {
-        "total": total, "ok": ok, "avg_score": avg(scores),
-        "lowest_score": min(scores) if scores else None,
-        "rating_counts": counts,
-        "by_language": {k: {"count": len(v), "avg_score": avg(v)} for k, v in by_lang.items()},
-        "by_speaker": {k: {"count": len(v), "avg_score": avg(v)} for k, v in by_speaker.items()},
-        "verdict": "(stored run)",
-    }
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -295,9 +290,13 @@ def build_parser() -> argparse.ArgumentParser:
     rl.add_argument("--db", default="tafsiri.db")
     rl.set_defaults(func=cmd_runs)
 
-    rp = sub.add_parser("report", help="print the stored report for a run")
+    rp = sub.add_parser("report", help="print or export the stored report for a run")
     rp.add_argument("run_id")
     rp.add_argument("--db", default="tafsiri.db")
+    rp.add_argument("--format", choices=["text", "json", "md"], default="text",
+                    help="output format (default: text to console)")
+    rp.add_argument("--out", default=None,
+                    help="write to this file instead of stdout (json/md)")
     rp.set_defaults(func=cmd_report)
     return p
 
