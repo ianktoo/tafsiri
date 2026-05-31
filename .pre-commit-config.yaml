@@ -1,0 +1,24 @@
+# Local guardrails — run automatically on every commit.
+#   uv sync --extra dev          # installs pre-commit
+#   uv run pre-commit install     # activates the git hook (one time)
+#   uv run pre-commit run --all-files   # check the whole repo now
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+
+  # Block secrets before they ever reach a commit (fully local, no API key).
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+        # Dataset text (finance/tech mention "password"/"PIN") and the lockfile
+        # hashes are not secrets — keep them out of the scan.
+        exclude: '^(samples/|uv\.lock$|\.secrets\.baseline$)'

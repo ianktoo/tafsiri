@@ -109,6 +109,35 @@ convenience on top):
 uv run tafsiri run
 ```
 
+### Demo
+
+```text
+$ tafsiri
+┌─ tafsiri · African-language translation + evals ─┐
+└──────────────────────────────────────────────────┘
+! No Daraja API key configured.
+? Run setup now? [Y/n] y
+? Daraja API key: ********************          # masked, written to gitignored .env
+✓ Saved to .env (gitignored) as dk_dev…f4e9
+? Test the key with one live call? [Y/n] y
+⠹ testing key…   ✓ Key works.
+› Local Ollama detected (qwen2.5:7b-instruct). Use as a free judge.
+
+── Configure run ──
+Translation engine    › 1. daraja   2. llm:ollama:qwen2.5:7b-instruct
+Dataset               › 4. finance  (samples/finance/finance_v1.jsonl)
+Target languages      ◉ 1. Swahili  ◉ 2. Yoruba  ◯ 3. Amharic
+Add an LLM-as-judge?  [Y/n] y  → ollama:qwen2.5:7b-instruct
+
+▶ Running 8 translations…  ▰▰▰▰▰▱▱▱ 5/8   send-money → Yoruba
+
+┌──────────── eval report ────────────┐
+│ good 1   marginal 5   risky 2        │
+└──────────────────────────────────────┘
+ by signal: confidence 0.87 · back_translation 0.67 · llm_judge 0.73
+ VERDICT: CONDITIONAL FIT — human-in-the-loop review for flagged items
+```
+
 That translates each message into Swahili, Yoruba, Amharic, and Creole,
 evaluates with confidence + back-translation, scores each, persists to
 `tafsiri.db`, and writes outputs to `out/`.
@@ -340,7 +369,8 @@ Exit codes: `0` success (or clean abandon), `2` config error (e.g. missing key),
 ## Development
 
 ```powershell
-uv run pytest          # full suite (77 tests), network-free — providers/judge are faked
+uv run pytest                 # full suite (77 tests), network-free — providers/judge are faked
+uv run pre-commit install     # local secret-scanning + hygiene hooks (one time)
 ```
 
 ## Project layout

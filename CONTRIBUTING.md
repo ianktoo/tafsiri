@@ -7,7 +7,21 @@ contributions slot into one place.
 
 ```bash
 uv sync --extra dev
-uv run pytest        # network-free; providers and the LLM judge are faked
+uv run pytest                 # network-free; providers and the LLM judge are faked
+uv run pre-commit install     # activate local guardrails (one time)
+```
+
+## Pre-commit hooks
+
+Every commit runs whitespace/EOF fixers and **`detect-secrets`** — a fully local
+secret scanner (no API key) that blocks credentials before they're committed.
+Known false positives (dataset text mentioning "password"/"PIN", lockfile
+hashes) are excluded via `.pre-commit-config.yaml` and `.secrets.baseline`.
+
+```bash
+uv run pre-commit run --all-files     # scan everything now
+# if you add a real new pattern that's NOT a secret, re-baseline:
+uv run detect-secrets scan --exclude-files 'samples/.*|uv\.lock|tests/.*' > .secrets.baseline
 ```
 
 ## Where things go (one concern per module)
