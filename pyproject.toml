@@ -1,6 +1,6 @@
 [project]
 name = "tafsiri"
-version = "0.0.1"
+version = "0.0.2"
 description = "Generate and evaluate African-language translation data (via Daraja AI's Babel) into fine-tuning-ready datasets."
 readme = "README.md"
 requires-python = ">=3.11"
