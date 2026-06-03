@@ -111,6 +111,24 @@ def test_gives_up_after_max_retries():
     assert session.calls == 3  # initial + 2 retries
 
 
+def test_unsupported_language_is_surfaced_clearly():
+    session = FakeSession(FakeResponse(400, {
+        "status": False, "message": "Unsupported translation language."}))
+    tr = _translator(session).translate("hello", "English", "Klingon")
+    assert not tr.ok
+    # pair-specific, readable message — not a raw dict dump
+    assert "unsupported language pair" in tr.error
+    assert "'English'" in tr.error and "'Klingon'" in tr.error
+    assert "Unsupported translation language." in tr.error
+
+
+def test_error_message_field_is_preferred_over_raw_dict():
+    session = FakeSession(FakeResponse(400, {"status": False, "message": "Bad request."}))
+    tr = _translator(session).translate("hello", "English", "Swahili")
+    assert not tr.ok
+    assert tr.error == "HTTP 400: Bad request."
+
+
 def test_does_not_retry_on_401():
     session = SequenceSession([FakeResponse(401, {"error": "unauthorized"})])
     tr = _translator(session, max_retries=4).translate("hello", "English", "Swahili")

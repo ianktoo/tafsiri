@@ -39,6 +39,21 @@ class DarajaTranslator:
     def _url(self) -> str:
         return f"{self.base_url}/translate"
 
+    @staticmethod
+    def _error_message(status: int, src_lang: str, tgt_lang: str, data: object) -> str:
+        """Turn a failed response body into a readable error.
+
+        Daraja reports failures with a JSON ``message`` field — surface that
+        instead of dumping the raw dict. An unsupported language pair (HTTP 400)
+        gets a pair-specific message so the cause is obvious in batch logs.
+        """
+        msg = data.get("message") if isinstance(data, dict) else None
+        if status == 400 and msg and "language" in msg.lower():
+            return f"unsupported language pair {src_lang!r} -> {tgt_lang!r}: {msg} (HTTP 400)"
+        if msg:
+            return f"HTTP {status}: {msg}"
+        return f"HTTP {status}: {data}"
+
     def _retry_after(self, resp: requests.Response, attempt: int) -> float:
         """Honor a Retry-After header if present, else exponential backoff."""
         header = resp.headers.get("Retry-After")
@@ -83,7 +98,7 @@ class DarajaTranslator:
 
         out.raw = data
         if not resp.ok:
-            out.error = f"HTTP {resp.status_code}: {data}"
+            out.error = self._error_message(resp.status_code, src_lang, tgt_lang, data)
             return out
 
         out.text = data.get("translation")
